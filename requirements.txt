@@ -1,0 +1,55 @@
+# Core dependencies for Cloud Sentinel's Toolkit
+# Version constraints ensure security and compatibility
+
+# Cloud Provider SDKs
+boto3>=1.26.0,<2.0.0                     # AWS SDK for Python
+azure-identity>=1.12.0,<2.0.0            # Azure authentication
+azure-mgmt-network>=19.0.0,<30.0.0       # Azure Network Management
+azure-mgmt-resource>=22.0.0,<30.0.0      # Azure Resource Management
+google-cloud-compute>=1.8.0,<2.0.0       # Google Cloud Compute
+google-cloud-logging>=3.2.0,<4.0.0       # Google Cloud Logging
+
+# Data Processing and Analysis
+pandas>=1.5.0,<3.0.0                     # Data manipulation and analysis
+numpy>=1.21.0,<2.0.0                     # Numerical computing
+networkx>=3.0,<4.0.0                     # Graph analysis for IAM relationships
+
+# Web Framework (for LLM Proxy)
+fastapi>=0.104.0,<1.0.0                  # Modern web framework
+uvicorn>=0.24.0,<1.0.0                   # ASGI server
+redis>=5.0.0,<6.0.0                      # Caching and session storage
+
+# Security and Encryption
+cryptography>=3.4.0,<42.0.0              # Encryption and hashing
+passlib[bcrypt]>=1.7.4,<2.0.0           # Password hashing
+
+# Configuration and CLI
+click>=8.0.0,<9.0.0                      # Command-line interface
+pyyaml>=6.0,<7.0.0                       # Configuration file parsing
+pydantic>=2.5.0,<3.0.0                   # Data validation
+
+# Visualization and Reporting
+matplotlib>=3.6.0,<4.0.0                 # Plotting library
+seaborn>=0.11.0,<1.0.0                   # Statistical visualization
+jinja2>=3.1.0,<4.0.0                     # Template engine for reports
+
+# HTTP Clients
+httpx>=0.25.0,<1.0.0                     # HTTP client for API calls
+requests>=2.28.0,<3.0.0                  # HTTP library (for compatibility)
+
+# Async Processing
+celery>=5.3.0,<6.0.0                     # Asynchronous task processing
+
+# Monitoring and Metrics
+prometheus-client>=0.19.0,<1.0.0         # Metrics collection
+
+# Database (for evidence storage)
+sqlalchemy>=1.4.0,<3.0.0                 # SQL toolkit and ORM
+alembic>=1.8.0,<2.0.0                    # Database migrations
+
+# Development and Testing (optional, see requirements-dev.txt)
+# pytest>=7.4.0,<8.0.0
+# pytest-cov>=4.0.0,<5.0.0
+# black>=22.0.0,<24.0.0
+# flake8>=5.0.0,<7.0.0
+# bandit>=1.7.0,<2.0.0
