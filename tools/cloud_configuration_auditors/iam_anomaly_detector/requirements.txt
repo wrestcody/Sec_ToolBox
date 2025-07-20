@@ -1,1 +1,13 @@
 # Cloud IAM Behavioral Anomaly Detector Dependencies
+# This tool uses only Python standard library modules
+# No external dependencies required for the MVP version
+
+# Future enhancements might include:
+# boto3>=1.26.0  # For real AWS CloudTrail integration
+# pandas>=1.5.0  # For advanced data analysis
+# scikit-learn>=1.1.0  # For machine learning-based anomaly detection
+# numpy>=1.21.0  # For numerical operations
+# matplotlib>=3.5.0  # For visualization
+# click>=8.0.0  # For enhanced CLI interface
+# jinja2>=3.0.0  # For HTML report generation
+# weasyprint>=54.0  # For PDF report generation

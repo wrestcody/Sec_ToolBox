@@ -5,12 +5,14 @@ Cloud IAM Behavioral Anomaly Detector
 A CLI tool that analyzes AWS CloudTrail logs for unusual IAM activity patterns
 that could indicate a compromised identity or privilege escalation.
 
-This is a proof-of-concept tool that uses simulated/mock data only.
+This tool is designed for audit evidence and compliance reporting purposes.
 """
 
 import argparse
 import json
 import sys
+import csv
+import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Set, Any, Optional
 from collections import defaultdict
@@ -18,7 +20,7 @@ import ipaddress
 
 
 class IAMAnomalyDetector:
-    """Main class for detecting IAM behavioral anomalies."""
+    """Main class for detecting IAM behavioral anomalies with audit capabilities."""
     
     def __init__(self, baseline_days: int = 30):
         """
@@ -30,6 +32,17 @@ class IAMAnomalyDetector:
         self.baseline_days = baseline_days
         self.user_baselines = {}
         self.anomalies = []
+        self.audit_metadata = {
+            'analysis_start_time': datetime.now().isoformat(),
+            'tool_version': '1.0.0',
+            'analysis_parameters': {},
+            'compliance_frameworks': {
+                'SOC2': ['CC6.1', 'CC6.2', 'CC6.3'],
+                'ISO27001': ['A.9.2.1', 'A.9.2.2', 'A.9.2.3'],
+                'NIST': ['AC-2', 'AC-3', 'AC-6'],
+                'CIS': ['1.1', '1.2', '1.3']
+            }
+        }
         
     def load_cloudtrail_logs(self, log_file: str) -> List[Dict[str, Any]]:
         """
@@ -80,7 +93,19 @@ class IAMAnomalyDetector:
         
         for log in logs:
             try:
-                event_time = datetime.fromisoformat(log['eventTime'].replace('Z', '+00:00'))
+                # Handle timezone-aware datetime parsing
+                event_time_str = log['eventTime']
+                if event_time_str.endswith('Z'):
+                    event_time = datetime.fromisoformat(event_time_str.replace('Z', '+00:00'))
+                else:
+                    event_time = datetime.fromisoformat(event_time_str)
+                
+                # Make sure all datetimes are timezone-aware for comparison
+                if start_time.tzinfo is None:
+                    start_time = start_time.replace(tzinfo=event_time.tzinfo)
+                if end_time.tzinfo is None:
+                    end_time = end_time.replace(tzinfo=event_time.tzinfo)
+                
                 if start_time <= event_time <= end_time:
                     filtered_logs.append(log)
             except (KeyError, ValueError) as e:
@@ -105,7 +130,10 @@ class IAMAnomalyDetector:
             'event_names': set(),
             'assumed_roles': set(),
             'policy_changes': 0,
-            'total_events': 0
+            'total_events': 0,
+            'first_seen': None,
+            'last_seen': None,
+            'activity_frequency': defaultdict(int)
         })
         
         for log in logs:
@@ -118,6 +146,18 @@ class IAMAnomalyDetector:
                 
                 profile = user_profiles[username]
                 profile['total_events'] += 1
+                
+                # Track timestamps
+                event_time_str = log['eventTime']
+                if event_time_str.endswith('Z'):
+                    event_time = datetime.fromisoformat(event_time_str.replace('Z', '+00:00'))
+                else:
+                    event_time = datetime.fromisoformat(event_time_str)
+                
+                if profile['first_seen'] is None or event_time < profile['first_seen']:
+                    profile['first_seen'] = event_time
+                if profile['last_seen'] is None or event_time > profile['last_seen']:
+                    profile['last_seen'] = event_time
                 
                 # Track source IPs
                 source_ip = log.get('sourceIPAddress')
@@ -133,6 +173,7 @@ class IAMAnomalyDetector:
                 event_name = log.get('eventName')
                 if event_name:
                     profile['event_names'].add(event_name)
+                    profile['activity_frequency'][event_name] += 1
                 
                 # Track assumed roles
                 if event_name == 'AssumeRole':
@@ -154,6 +195,9 @@ class IAMAnomalyDetector:
             profile['aws_regions'] = list(profile['aws_regions'])
             profile['event_names'] = list(profile['event_names'])
             profile['assumed_roles'] = list(profile['assumed_roles'])
+            profile['activity_frequency'] = dict(profile['activity_frequency'])
+            profile['first_seen'] = profile['first_seen'].isoformat() if profile['first_seen'] else None
+            profile['last_seen'] = profile['last_seen'].isoformat() if profile['last_seen'] else None
         
         return dict(user_profiles)
     
@@ -197,7 +241,14 @@ class IAMAnomalyDetector:
                             'anomaly_type': 'new_location_ip',
                             'description': f"User '{username}' accessed from new IP address: {source_ip}",
                             'severity': 'medium',
-                            'recommendation': 'Investigate user access patterns and verify legitimate access'
+                            'recommendation': 'Investigate user access patterns and verify legitimate access',
+                            'compliance_impact': ['SOC2:CC6.1', 'ISO27001:A.9.2.1', 'NIST:AC-2'],
+                            'risk_score': 6,
+                            'evidence': {
+                                'baseline_ips': baseline['source_ips'],
+                                'new_ip': source_ip,
+                                'user_activity_history': baseline['total_events']
+                            }
                         })
                     
                     if aws_region and aws_region not in baseline['aws_regions']:
@@ -210,7 +261,14 @@ class IAMAnomalyDetector:
                             'anomaly_type': 'new_aws_region',
                             'description': f"User '{username}' accessed from new AWS region: {aws_region}",
                             'severity': 'medium',
-                            'recommendation': 'Verify if user should have access to this region'
+                            'recommendation': 'Verify if user should have access to this region',
+                            'compliance_impact': ['SOC2:CC6.2', 'ISO27001:A.9.2.2', 'NIST:AC-2'],
+                            'risk_score': 5,
+                            'evidence': {
+                                'baseline_regions': baseline['aws_regions'],
+                                'new_region': aws_region,
+                                'user_activity_history': baseline['total_events']
+                            }
                         })
                 
                 # Check for unusual policy changes
@@ -226,7 +284,14 @@ class IAMAnomalyDetector:
                             'anomaly_type': 'unusual_policy_change',
                             'description': f"User '{username}' made policy change (rare activity for this user)",
                             'severity': 'high',
-                            'recommendation': 'Review policy changes and verify legitimate need'
+                            'recommendation': 'Review policy changes and verify legitimate need',
+                            'compliance_impact': ['SOC2:CC6.3', 'ISO27001:A.9.2.3', 'NIST:AC-6'],
+                            'risk_score': 8,
+                            'evidence': {
+                                'baseline_policy_changes': baseline['policy_changes'],
+                                'total_user_events': baseline['total_events'],
+                                'policy_change_frequency': baseline['policy_changes'] / max(baseline['total_events'], 1)
+                            }
                         })
                     
                     # Check for overly permissive policies
@@ -242,7 +307,14 @@ class IAMAnomalyDetector:
                             'anomaly_type': 'overly_permissive_policy',
                             'description': f"User '{username}' created/attached policy with wildcard permissions (*)",
                             'severity': 'critical',
-                            'recommendation': 'Immediately review and restrict overly permissive policy'
+                            'recommendation': 'Immediately review and restrict overly permissive policy',
+                            'compliance_impact': ['SOC2:CC6.3', 'ISO27001:A.9.2.3', 'NIST:AC-6', 'CIS:1.3'],
+                            'risk_score': 10,
+                            'evidence': {
+                                'policy_document': policy_document,
+                                'wildcard_detected': True,
+                                'user_privilege_level': 'high' if baseline['policy_changes'] > 5 else 'medium'
+                            }
                         })
                 
                 # Check for first-time role assumption
@@ -258,7 +330,14 @@ class IAMAnomalyDetector:
                             'anomaly_type': 'first_time_role_assumption',
                             'description': f"User '{username}' assumed role for the first time: {role_arn}",
                             'severity': 'medium',
-                            'recommendation': 'Verify role assumption is legitimate and review role permissions'
+                            'recommendation': 'Verify role assumption is legitimate and review role permissions',
+                            'compliance_impact': ['SOC2:CC6.2', 'ISO27001:A.9.2.2', 'NIST:AC-3'],
+                            'risk_score': 7,
+                            'evidence': {
+                                'baseline_roles': baseline['assumed_roles'],
+                                'new_role': role_arn,
+                                'user_role_history': len(baseline['assumed_roles'])
+                            }
                         })
                 
                 # Check for unusual event types
@@ -272,7 +351,14 @@ class IAMAnomalyDetector:
                         'anomaly_type': 'unusual_event_type',
                         'description': f"User '{username}' performed unusual event: {event_name}",
                         'severity': 'low',
-                        'recommendation': 'Review if this event type is expected for this user'
+                        'recommendation': 'Review if this event type is expected for this user',
+                        'compliance_impact': ['SOC2:CC6.1', 'ISO27001:A.9.2.1', 'NIST:AC-2'],
+                        'risk_score': 3,
+                        'evidence': {
+                            'baseline_events': baseline['event_names'],
+                            'new_event': event_name,
+                            'user_event_history': baseline['total_events']
+                        }
                     })
                     
             except Exception as e:
@@ -280,6 +366,246 @@ class IAMAnomalyDetector:
                 continue
         
         return anomalies
+    
+    def generate_audit_report(self, anomalies: List[Dict[str, Any]], 
+                            user_baselines: Dict[str, Any],
+                            analysis_metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generate a comprehensive audit report suitable for compliance purposes.
+        
+        Args:
+            anomalies: List of detected anomalies
+            user_baselines: Dictionary of user baseline profiles
+            analysis_metadata: Metadata about the analysis
+            
+        Returns:
+            Structured audit report
+        """
+        report = {
+            'audit_metadata': {
+                'report_generated': datetime.now().isoformat(),
+                'tool_version': '1.0.0',
+                'analysis_parameters': analysis_metadata,
+                'compliance_frameworks': self.audit_metadata['compliance_frameworks']
+            },
+            'executive_summary': {
+                'total_anomalies': len(anomalies),
+                'critical_anomalies': len([a for a in anomalies if a['severity'] == 'critical']),
+                'high_anomalies': len([a for a in anomalies if a['severity'] == 'high']),
+                'medium_anomalies': len([a for a in anomalies if a['severity'] == 'medium']),
+                'low_anomalies': len([a for a in anomalies if a['severity'] == 'low']),
+                'total_users_analyzed': len(user_baselines),
+                'overall_risk_level': self._calculate_overall_risk(anomalies)
+            },
+            'compliance_assessment': {
+                'soc2': self._assess_soc2_compliance(anomalies),
+                'iso27001': self._assess_iso27001_compliance(anomalies),
+                'nist': self._assess_nist_compliance(anomalies),
+                'cis': self._assess_cis_compliance(anomalies)
+            },
+            'detailed_findings': {
+                'anomalies': anomalies,
+                'user_baselines': user_baselines
+            },
+            'recommendations': self._generate_recommendations(anomalies),
+            'risk_assessment': self._generate_risk_assessment(anomalies)
+        }
+        
+        return report
+    
+    def _calculate_overall_risk(self, anomalies: List[Dict[str, Any]]) -> str:
+        """Calculate overall risk level based on anomalies."""
+        if not anomalies:
+            return 'LOW'
+        
+        max_risk_score = max(anomaly.get('risk_score', 0) for anomaly in anomalies)
+        
+        if max_risk_score >= 9:
+            return 'CRITICAL'
+        elif max_risk_score >= 7:
+            return 'HIGH'
+        elif max_risk_score >= 5:
+            return 'MEDIUM'
+        else:
+            return 'LOW'
+    
+    def _assess_soc2_compliance(self, anomalies: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Assess SOC2 compliance based on anomalies."""
+        controls = {
+            'CC6.1': {'status': 'COMPLIANT', 'findings': []},
+            'CC6.2': {'status': 'COMPLIANT', 'findings': []},
+            'CC6.3': {'status': 'COMPLIANT', 'findings': []}
+        }
+        
+        for anomaly in anomalies:
+            for control in anomaly.get('compliance_impact', []):
+                if control.startswith('SOC2:'):
+                    control_id = control.split(':')[1]
+                    if control_id in controls:
+                        controls[control_id]['status'] = 'NON_COMPLIANT'
+                        controls[control_id]['findings'].append({
+                            'anomaly_type': anomaly['anomaly_type'],
+                            'severity': anomaly['severity'],
+                            'description': anomaly['description']
+                        })
+        
+        return controls
+    
+    def _assess_iso27001_compliance(self, anomalies: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Assess ISO27001 compliance based on anomalies."""
+        controls = {
+            'A.9.2.1': {'status': 'COMPLIANT', 'findings': []},
+            'A.9.2.2': {'status': 'COMPLIANT', 'findings': []},
+            'A.9.2.3': {'status': 'COMPLIANT', 'findings': []}
+        }
+        
+        for anomaly in anomalies:
+            for control in anomaly.get('compliance_impact', []):
+                if control.startswith('ISO27001:'):
+                    control_id = control.split(':')[1]
+                    if control_id in controls:
+                        controls[control_id]['status'] = 'NON_COMPLIANT'
+                        controls[control_id]['findings'].append({
+                            'anomaly_type': anomaly['anomaly_type'],
+                            'severity': anomaly['severity'],
+                            'description': anomaly['description']
+                        })
+        
+        return controls
+    
+    def _assess_nist_compliance(self, anomalies: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Assess NIST compliance based on anomalies."""
+        controls = {
+            'AC-2': {'status': 'COMPLIANT', 'findings': []},
+            'AC-3': {'status': 'COMPLIANT', 'findings': []},
+            'AC-6': {'status': 'COMPLIANT', 'findings': []}
+        }
+        
+        for anomaly in anomalies:
+            for control in anomaly.get('compliance_impact', []):
+                if control.startswith('NIST:'):
+                    control_id = control.split(':')[1]
+                    if control_id in controls:
+                        controls[control_id]['status'] = 'NON_COMPLIANT'
+                        controls[control_id]['findings'].append({
+                            'anomaly_type': anomaly['anomaly_type'],
+                            'severity': anomaly['severity'],
+                            'description': anomaly['description']
+                        })
+        
+        return controls
+    
+    def _assess_cis_compliance(self, anomalies: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Assess CIS compliance based on anomalies."""
+        controls = {
+            '1.1': {'status': 'COMPLIANT', 'findings': []},
+            '1.2': {'status': 'COMPLIANT', 'findings': []},
+            '1.3': {'status': 'COMPLIANT', 'findings': []}
+        }
+        
+        for anomaly in anomalies:
+            for control in anomaly.get('compliance_impact', []):
+                if control.startswith('CIS:'):
+                    control_id = control.split(':')[1]
+                    if control_id in controls:
+                        controls[control_id]['status'] = 'NON_COMPLIANT'
+                        controls[control_id]['findings'].append({
+                            'anomaly_type': anomaly['anomaly_type'],
+                            'severity': anomaly['severity'],
+                            'description': anomaly['description']
+                        })
+        
+        return controls
+    
+    def _generate_recommendations(self, anomalies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Generate prioritized recommendations based on anomalies."""
+        recommendations = []
+        
+        # Group by anomaly type
+        anomaly_groups = defaultdict(list)
+        for anomaly in anomalies:
+            anomaly_groups[anomaly['anomaly_type']].append(anomaly)
+        
+        for anomaly_type, group in anomaly_groups.items():
+            severity = max(a['severity'] for a in group)
+            risk_score = max(a.get('risk_score', 0) for a in group)
+            
+            recommendations.append({
+                'priority': 'HIGH' if severity in ['critical', 'high'] else 'MEDIUM',
+                'category': anomaly_type.replace('_', ' ').title(),
+                'description': f"Address {len(group)} {anomaly_type.replace('_', ' ')} anomaly(ies)",
+                'action_items': [a['recommendation'] for a in group],
+                'affected_users': list(set(a['username'] for a in group)),
+                'risk_score': risk_score
+            })
+        
+        # Sort by priority and risk score
+        recommendations.sort(key=lambda x: (x['priority'] == 'HIGH', -x['risk_score']), reverse=True)
+        
+        return recommendations
+    
+    def _generate_risk_assessment(self, anomalies: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Generate detailed risk assessment."""
+        if not anomalies:
+            return {'overall_risk': 'LOW', 'risk_factors': []}
+        
+        risk_factors = []
+        total_risk_score = 0
+        
+        for anomaly in anomalies:
+            risk_score = anomaly.get('risk_score', 0)
+            total_risk_score += risk_score
+            
+            risk_factors.append({
+                'factor': anomaly['anomaly_type'],
+                'severity': anomaly['severity'],
+                'risk_score': risk_score,
+                'description': anomaly['description'],
+                'affected_user': anomaly['username']
+            })
+        
+        avg_risk_score = total_risk_score / len(anomalies)
+        
+        return {
+            'overall_risk': self._calculate_overall_risk(anomalies),
+            'average_risk_score': round(avg_risk_score, 2),
+            'total_risk_score': total_risk_score,
+            'risk_factors': sorted(risk_factors, key=lambda x: x['risk_score'], reverse=True)
+        }
+    
+    def export_to_csv(self, anomalies: List[Dict[str, Any]], output_file: str):
+        """Export anomalies to CSV format for audit evidence."""
+        if not anomalies:
+            print("No anomalies to export.")
+            return
+        
+        fieldnames = [
+            'event_time', 'username', 'event_name', 'source_ip', 'aws_region',
+            'anomaly_type', 'severity', 'description', 'recommendation',
+            'risk_score', 'compliance_impact'
+        ]
+        
+        with open(output_file, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            
+            for anomaly in anomalies:
+                row = {
+                    'event_time': anomaly['event_time'],
+                    'username': anomaly['username'],
+                    'event_name': anomaly['event_name'],
+                    'source_ip': anomaly['source_ip'],
+                    'aws_region': anomaly['aws_region'],
+                    'anomaly_type': anomaly['anomaly_type'],
+                    'severity': anomaly['severity'],
+                    'description': anomaly['description'],
+                    'recommendation': anomaly['recommendation'],
+                    'risk_score': anomaly.get('risk_score', 0),
+                    'compliance_impact': '; '.join(anomaly.get('compliance_impact', []))
+                }
+                writer.writerow(row)
+        
+        print(f"Anomalies exported to {output_file}")
     
     def print_anomalies(self, anomalies: List[Dict[str, Any]]):
         """
@@ -309,17 +635,22 @@ class IAMAnomalyDetector:
             print(f"   Event: {anomaly['event_name']}")
             print(f"   Source IP: {anomaly['source_ip']}")
             print(f"   AWS Region: {anomaly['aws_region']}")
+            print(f"   Risk Score: {anomaly.get('risk_score', 'N/A')}")
+            print(f"   Compliance: {', '.join(anomaly.get('compliance_impact', []))}")
             print(f"   Description: {anomaly['description']}")
             print(f"   Recommendation: {anomaly['recommendation']}")
             print("-" * 80)
     
-    def run_analysis(self, log_file: str, detection_days: int = 1):
+    def run_analysis(self, log_file: str, detection_days: int = 1, 
+                    output_format: str = 'console', output_file: str = None):
         """
         Run the complete anomaly detection analysis.
         
         Args:
             log_file: Path to the CloudTrail log file
             detection_days: Number of days to analyze for anomalies
+            output_format: Output format ('console', 'json', 'csv', 'audit')
+            output_file: Output file path (required for non-console formats)
         """
         print("🔍 Cloud IAM Behavioral Anomaly Detector")
         print("=" * 50)
@@ -333,6 +664,16 @@ class IAMAnomalyDetector:
         end_time = datetime.now()
         detection_start = end_time - timedelta(days=detection_days)
         baseline_start = detection_start - timedelta(days=self.baseline_days)
+        
+        analysis_metadata = {
+            'baseline_days': self.baseline_days,
+            'detection_days': detection_days,
+            'baseline_start': baseline_start.isoformat(),
+            'baseline_end': detection_start.isoformat(),
+            'detection_start': detection_start.isoformat(),
+            'detection_end': end_time.isoformat(),
+            'total_logs_processed': len(all_logs)
+        }
         
         print(f"\n⏰ Time Windows:")
         print(f"   Baseline period: {baseline_start.strftime('%Y-%m-%d %H:%M:%S')} to {detection_start.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -355,25 +696,59 @@ class IAMAnomalyDetector:
         # Detect anomalies
         anomalies = self.detect_anomalies(detection_logs, user_baselines)
         
-        # Print results
-        self.print_anomalies(anomalies)
+        # Generate output based on format
+        if output_format == 'console':
+            self.print_anomalies(anomalies)
+        elif output_format == 'json':
+            if not output_file:
+                output_file = 'anomaly_report.json'
+            report = {
+                'anomalies': anomalies,
+                'metadata': analysis_metadata,
+                'user_baselines': user_baselines
+            }
+            with open(output_file, 'w') as f:
+                json.dump(report, f, indent=2)
+            print(f"JSON report saved to {output_file}")
+        elif output_format == 'csv':
+            if not output_file:
+                output_file = 'anomaly_report.csv'
+            self.export_to_csv(anomalies, output_file)
+        elif output_format == 'audit':
+            if not output_file:
+                output_file = 'audit_report.json'
+            audit_report = self.generate_audit_report(anomalies, user_baselines, analysis_metadata)
+            with open(output_file, 'w') as f:
+                json.dump(audit_report, f, indent=2)
+            print(f"Audit report saved to {output_file}")
         
         print(f"\n📈 Summary:")
         print(f"   Total log entries processed: {len(all_logs)}")
         print(f"   Users with baselines: {len(user_baselines)}")
         print(f"   Anomalies detected: {len(anomalies)}")
+        
+        if anomalies:
+            severity_counts = defaultdict(int)
+            for anomaly in anomalies:
+                severity_counts[anomaly['severity']] += 1
+            
+            print(f"   Severity breakdown:")
+            for severity, count in sorted(severity_counts.items(), key=lambda x: ['critical', 'high', 'medium', 'low'].index(x[0])):
+                print(f"     {severity.title()}: {count}")
 
 
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Cloud IAM Behavioral Anomaly Detector",
+        description="Cloud IAM Behavioral Anomaly Detector - Audit & Compliance Ready",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s --log-file mock_cloudtrail_logs.json
   %(prog)s --log-file mock_cloudtrail_logs.json --baseline-days 60 --detection-days 7
-  %(prog)s --log-file mock_cloudtrail_logs.json --detection-days 24
+  %(prog)s --log-file mock_cloudtrail_logs.json --output-format json --output-file report.json
+  %(prog)s --log-file mock_cloudtrail_logs.json --output-format audit --output-file audit_report.json
+  %(prog)s --log-file mock_cloudtrail_logs.json --output-format csv --output-file findings.csv
         """
     )
     
@@ -398,6 +773,18 @@ Examples:
     )
     
     parser.add_argument(
+        '--output-format',
+        choices=['console', 'json', 'csv', 'audit'],
+        default='console',
+        help='Output format (default: console)'
+    )
+    
+    parser.add_argument(
+        '--output-file',
+        help='Output file path (required for non-console formats)'
+    )
+    
+    parser.add_argument(
         '--version',
         action='version',
         version='%(prog)s 1.0.0'
@@ -410,9 +797,13 @@ Examples:
         print("Error: Baseline and detection days must be positive integers.")
         sys.exit(1)
     
+    if args.output_format != 'console' and not args.output_file:
+        print(f"Error: Output file is required for {args.output_format} format.")
+        sys.exit(1)
+    
     # Run analysis
     detector = IAMAnomalyDetector(baseline_days=args.baseline_days)
-    detector.run_analysis(args.log_file, args.detection_days)
+    detector.run_analysis(args.log_file, args.detection_days, args.output_format, args.output_file)
 
 
 if __name__ == '__main__':
