@@ -81,8 +81,13 @@ def generate_mock_evidence(config: Dict[str, Any]) -> List[Dict[str, Any]]:
             'control_id': control['id'],
             'control_name': control['name'],
             'framework': control['framework'],
+            'category': control.get('category', 'Unknown'),
             'evidence_type': control['type'],
             'timestamp': datetime.now(timezone.utc).isoformat(),
+            'risk_level': control.get('risk_level', 'Medium'),
+            'compliance_status': 'Compliant',
+            'findings': [],
+            'recommendations': [],
             'data': {}
         }
         
@@ -107,6 +112,21 @@ def generate_mock_evidence(config: Dict[str, Any]) -> List[Dict[str, Any]]:
                     {'username': 'admin-user-3', 'policy': 'AdministratorAccess'}
                 ]
             }
+            evidence['findings'] = [
+                "✅ Root account MFA is enabled",
+                "✅ Minimum password length is 12+ characters",
+                "✅ Password policy requires symbols",
+                "✅ Password policy requires numbers",
+                "✅ Password policy requires uppercase characters",
+                "✅ Password policy requires lowercase characters",
+                "✅ Password policy requires password expiration",
+                "✅ Password expiration is set to 90 days",
+                "⚠️ 3 users have AdministratorAccess policy"
+            ]
+            evidence['recommendations'] = [
+                "Review and reduce the number of administrative users"
+            ]
+            evidence['compliance_status'] = 'Partially Compliant'
         elif control['type'] == 's3':
             evidence['data'] = {
                 'total_buckets': 5,
@@ -126,6 +146,15 @@ def generate_mock_evidence(config: Dict[str, Any]) -> List[Dict[str, Any]]:
                     'insecure-bucket-1': 'NotEnabled'
                 }
             }
+            evidence['findings'] = [
+                "⚠️ 4/5 S3 buckets are encrypted",
+                "❌ 1 buckets are not encrypted",
+                "✅ All 5 S3 buckets have versioning enabled"
+            ]
+            evidence['recommendations'] = [
+                "Enable encryption for 1 unencrypted S3 buckets"
+            ]
+            evidence['compliance_status'] = 'Partially Compliant'
         elif control['type'] == 'cloudtrail':
             evidence['data'] = {
                 'total_trails': 2,
@@ -159,6 +188,16 @@ def generate_mock_evidence(config: Dict[str, Any]) -> List[Dict[str, Any]]:
                     }
                 }
             }
+            evidence['findings'] = [
+                "✅ 2 CloudTrail trail(s) configured",
+                "✅ 1 multi-region trail(s) configured",
+                "⚠️ 1 trail(s) have log file validation enabled",
+                "✅ All 2 CloudTrail trail(s) are actively logging"
+            ]
+            evidence['recommendations'] = [
+                "Enable log file validation for CloudTrail trails"
+            ]
+            evidence['compliance_status'] = 'Partially Compliant'
         elif control['type'] == 'rds':
             evidence['data'] = {
                 'total_instances': 3,
@@ -187,6 +226,14 @@ def generate_mock_evidence(config: Dict[str, Any]) -> List[Dict[str, Any]]:
                     }
                 ]
             }
+            evidence['findings'] = [
+                "⚠️ 2/3 RDS instance(s) are encrypted",
+                "❌ 1 instance(s) are not encrypted"
+            ]
+            evidence['recommendations'] = [
+                "Enable encryption for 1 unencrypted RDS instance(s)"
+            ]
+            evidence['compliance_status'] = 'Partially Compliant'
         
         mock_evidence.append(evidence)
         print(f"   ✅ Generated mock evidence for {control['id']} - {control['name']}")
@@ -225,9 +272,16 @@ def generate_mock_report(evidence: List[Dict[str, Any]], output_format: str = 'j
         # Summary statistics
         frameworks = {}
         evidence_types = {}
+        compliance_status = {}
+        risk_levels = {}
+        
         for ev in evidence:
             frameworks[ev['framework']] = frameworks.get(ev['framework'], 0) + 1
             evidence_types[ev['evidence_type']] = evidence_types.get(ev['evidence_type'], 0) + 1
+            status = ev.get('compliance_status', 'Unknown')
+            compliance_status[status] = compliance_status.get(status, 0) + 1
+            risk_level = ev.get('risk_level', 'Unknown')
+            risk_levels[risk_level] = risk_levels.get(risk_level, 0) + 1
         
         report_lines.extend([
             "### Frameworks Covered",
@@ -246,26 +300,69 @@ def generate_mock_report(evidence: List[Dict[str, Any]], output_format: str = 'j
         
         report_lines.extend([
             "",
+            "### Compliance Status Summary",
+            ""
+        ])
+        for status, count in compliance_status.items():
+            status_icon = "✅" if status == "Compliant" else "⚠️" if status == "Partially Compliant" else "❌" if status == "Non-Compliant" else "❓"
+            report_lines.append(f"- {status_icon} **{status}:** {count} controls")
+        
+        report_lines.extend([
+            "",
+            "### Risk Level Distribution",
+            ""
+        ])
+        for risk_level, count in risk_levels.items():
+            risk_icon = "🔴" if risk_level == "Critical" else "🟠" if risk_level == "High" else "🟡" if risk_level == "Medium" else "🟢" if risk_level == "Low" else "⚪"
+            report_lines.append(f"- {risk_icon} **{risk_level}:** {count} controls")
+        
+        report_lines.extend([
+            "",
             "## Detailed Evidence",
             ""
         ])
         
         for ev in evidence:
+            # Determine status icon
+            status = ev.get('compliance_status', 'Unknown')
+            status_icon = "✅" if status == "Compliant" else "⚠️" if status == "Partially Compliant" else "❌" if status == "Non-Compliant" else "❓"
+            
+            # Determine risk icon
+            risk_level = ev.get('risk_level', 'Unknown')
+            risk_icon = "🔴" if risk_level == "Critical" else "🟠" if risk_level == "High" else "🟡" if risk_level == "Medium" else "🟢" if risk_level == "Low" else "⚪"
+            
             report_lines.extend([
                 f"### {ev['control_id']} - {ev['control_name']}",
                 "",
-                f"**Framework:** {ev['framework']}",
+                f"**Framework:** {ev.get('framework', 'Unknown')}",
+                f"**Category:** {ev.get('category', 'Unknown')}",
                 f"**Type:** {ev['evidence_type']}",
+                f"**Risk Level:** {risk_icon} {risk_level}",
+                f"**Compliance Status:** {status_icon} {status}",
                 f"**Timestamp:** {ev['timestamp']}",
-                "",
-                "**Status:** ✅ Mock Data Generated",
                 ""
             ])
             
-            # Add key findings
+            # Add findings
+            findings = ev.get('findings', [])
+            if findings:
+                report_lines.append("**Findings:**")
+                for finding in findings:
+                    report_lines.append(f"- {finding}")
+                report_lines.append("")
+            
+            # Add recommendations
+            recommendations = ev.get('recommendations', [])
+            if recommendations:
+                report_lines.append("**Recommendations:**")
+                for recommendation in recommendations:
+                    report_lines.append(f"- {recommendation}")
+                report_lines.append("")
+            
+            # Add key data summary
             data = ev.get('data', {})
             if data:
-                report_lines.append("**Key Findings:**")
+                report_lines.append("**Data Summary:**")
                 for key, value in data.items():
                     if isinstance(value, (dict, list)):
                         report_lines.append(f"- **{key}:** {len(value)} items")
@@ -287,29 +384,31 @@ def generate_mock_report(evidence: List[Dict[str, Any]], output_format: str = 'j
         
         # Header
         writer.writerow([
-            'Control ID', 'Control Name', 'Framework', 'Evidence Type', 
-            'Timestamp', 'Status', 'Key Findings'
+            'Control ID', 'Control Name', 'Framework', 'Category', 'Evidence Type', 
+            'Risk Level', 'Compliance Status', 'Timestamp', 'Findings', 'Recommendations'
         ])
         
         # Data rows
         for ev in evidence:
-            # Extract key findings
-            findings = []
-            data = ev.get('data', {})
-            for key, value in data.items():
-                if isinstance(value, (dict, list)):
-                    findings.append(f"{key}: {len(value)} items")
-                else:
-                    findings.append(f"{key}: {value}")
+            # Extract findings
+            findings = ev.get('findings', [])
+            findings_text = '; '.join(findings) if findings else 'No findings'
+            
+            # Extract recommendations
+            recommendations = ev.get('recommendations', [])
+            recommendations_text = '; '.join(recommendations) if recommendations else 'No recommendations'
             
             writer.writerow([
                 ev['control_id'],
                 ev['control_name'],
-                ev['framework'],
+                ev.get('framework', ''),
+                ev.get('category', ''),
                 ev['evidence_type'],
+                ev.get('risk_level', ''),
+                ev.get('compliance_status', ''),
                 ev['timestamp'],
-                'Mock Data Generated',
-                '; '.join(findings)
+                findings_text,
+                recommendations_text
             ])
         
         return output.getvalue()

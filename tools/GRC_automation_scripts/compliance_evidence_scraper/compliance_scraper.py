@@ -109,8 +109,14 @@ class ComplianceEvidenceScraper:
         evidence = {
             'control_id': control['id'],
             'control_name': control['name'],
+            'framework': control.get('framework', 'Unknown'),
+            'category': control.get('category', 'Unknown'),
             'evidence_type': 'iam',
             'timestamp': datetime.now(timezone.utc).isoformat(),
+            'risk_level': control.get('risk_level', 'Unknown'),
+            'compliance_status': 'Unknown',
+            'findings': [],
+            'recommendations': [],
             'data': {}
         }
         
@@ -122,19 +128,88 @@ class ComplianceEvidenceScraper:
                     mfa_enabled = account_summary['SummaryMap'].get('AccountMFAEnabled', 0)
                     evidence['data']['root_mfa_enabled'] = bool(mfa_enabled)
                     evidence['data']['root_mfa_status'] = 'Enabled' if mfa_enabled else 'Disabled'
+                    
+                    # Add compliance assessment
+                    if mfa_enabled:
+                        evidence['findings'].append("✅ Root account MFA is enabled")
+                    else:
+                        evidence['findings'].append("❌ Root account MFA is not enabled")
+                        evidence['recommendations'].append("Enable MFA for the root account immediately")
+                        evidence['compliance_status'] = 'Non-Compliant'
+                        
                 except ClientError as e:
                     evidence['data']['root_mfa_error'] = str(e)
+                    evidence['findings'].append(f"⚠️ Unable to verify root MFA status: {e}")
             
             # Check IAM password policy
             if 'password_policy_check' in control.get('checks', []):
                 try:
                     password_policy = self.aws_clients['iam'].get_account_password_policy()
-                    evidence['data']['password_policy'] = password_policy['PasswordPolicy']
+                    policy = password_policy['PasswordPolicy']
+                    evidence['data']['password_policy'] = policy
+                    
+                    # Assess password policy compliance
+                    findings = []
+                    recommendations = []
+                    
+                    if policy.get('MinimumPasswordLength', 0) >= 12:
+                        findings.append("✅ Minimum password length is 12+ characters")
+                    else:
+                        findings.append(f"❌ Minimum password length is {policy.get('MinimumPasswordLength', 0)} characters")
+                        recommendations.append("Increase minimum password length to 12+ characters")
+                    
+                    if policy.get('RequireSymbols', False):
+                        findings.append("✅ Password policy requires symbols")
+                    else:
+                        findings.append("❌ Password policy does not require symbols")
+                        recommendations.append("Enable symbol requirement in password policy")
+                    
+                    if policy.get('RequireNumbers', False):
+                        findings.append("✅ Password policy requires numbers")
+                    else:
+                        findings.append("❌ Password policy does not require numbers")
+                        recommendations.append("Enable number requirement in password policy")
+                    
+                    if policy.get('RequireUppercaseCharacters', False):
+                        findings.append("✅ Password policy requires uppercase characters")
+                    else:
+                        findings.append("❌ Password policy does not require uppercase characters")
+                        recommendations.append("Enable uppercase character requirement in password policy")
+                    
+                    if policy.get('RequireLowercaseCharacters', False):
+                        findings.append("✅ Password policy requires lowercase characters")
+                    else:
+                        findings.append("❌ Password policy does not require lowercase characters")
+                        recommendations.append("Enable lowercase character requirement in password policy")
+                    
+                    if policy.get('ExpirePasswords', False):
+                        findings.append("✅ Password policy requires password expiration")
+                        max_age = policy.get('MaxPasswordAge', 0)
+                        if max_age <= 90:
+                            findings.append(f"✅ Password expiration is set to {max_age} days")
+                        else:
+                            findings.append(f"⚠️ Password expiration is set to {max_age} days (recommend 90 days or less)")
+                            recommendations.append("Reduce password expiration to 90 days or less")
+                    else:
+                        findings.append("❌ Password policy does not require password expiration")
+                        recommendations.append("Enable password expiration in password policy")
+                    
+                    evidence['findings'].extend(findings)
+                    evidence['recommendations'].extend(recommendations)
+                    
+                    # Update compliance status if recommendations exist
+                    if recommendations and evidence['compliance_status'] != 'Non-Compliant':
+                        evidence['compliance_status'] = 'Partially Compliant'
+                        
                 except ClientError as e:
                     if e.response['Error']['Code'] == 'NoSuchEntity':
                         evidence['data']['password_policy'] = 'No password policy configured'
+                        evidence['findings'].append("❌ No IAM password policy is configured")
+                        evidence['recommendations'].append("Configure a comprehensive IAM password policy")
+                        evidence['compliance_status'] = 'Non-Compliant'
                     else:
                         evidence['data']['password_policy_error'] = str(e)
+                        evidence['findings'].append(f"⚠️ Unable to verify password policy: {e}")
             
             # Check for admin users
             if 'admin_users_check' in control.get('checks', []):
@@ -155,11 +230,34 @@ class ComplianceEvidenceScraper:
                                     })
                     evidence['data']['admin_users'] = admin_users
                     evidence['data']['admin_users_count'] = len(admin_users)
+                    
+                    # Assess admin user compliance
+                    if len(admin_users) == 0:
+                        evidence['findings'].append("✅ No users with AdministratorAccess policy found")
+                    elif len(admin_users) <= 3:
+                        evidence['findings'].append(f"⚠️ {len(admin_users)} users have AdministratorAccess policy")
+                        evidence['recommendations'].append("Review and reduce the number of administrative users")
+                        if evidence['compliance_status'] != 'Non-Compliant':
+                            evidence['compliance_status'] = 'Partially Compliant'
+                    else:
+                        evidence['findings'].append(f"❌ {len(admin_users)} users have AdministratorAccess policy (too many)")
+                        evidence['recommendations'].append("Immediately review and reduce administrative users to minimum required")
+                        evidence['compliance_status'] = 'Non-Compliant'
+                        
                 except ClientError as e:
                     evidence['data']['admin_users_error'] = str(e)
+                    evidence['findings'].append(f"⚠️ Unable to verify admin users: {e}")
+            
+            # Set compliance status if not already set
+            if evidence['compliance_status'] == 'Unknown' and not evidence['findings']:
+                evidence['compliance_status'] = 'Compliant'
+            elif evidence['compliance_status'] == 'Unknown':
+                evidence['compliance_status'] = 'Compliant'
                     
         except Exception as e:
             evidence['error'] = str(e)
+            evidence['findings'].append(f"❌ Error collecting IAM evidence: {e}")
+            evidence['compliance_status'] = 'Error'
             self.logger.error(f"Error collecting IAM evidence for {control['id']}: {e}")
         
         return evidence
@@ -169,8 +267,14 @@ class ComplianceEvidenceScraper:
         evidence = {
             'control_id': control['id'],
             'control_name': control['name'],
+            'framework': control.get('framework', 'Unknown'),
+            'category': control.get('category', 'Unknown'),
             'evidence_type': 's3',
             'timestamp': datetime.now(timezone.utc).isoformat(),
+            'risk_level': control.get('risk_level', 'Unknown'),
+            'compliance_status': 'Unknown',
+            'findings': [],
+            'recommendations': [],
             'data': {}
         }
         
@@ -208,8 +312,28 @@ class ComplianceEvidenceScraper:
                     evidence['data']['total_buckets'] = len(buckets)
                     evidence['data']['encrypted_buckets'] = len([b for b in buckets if b.get('encryption_enabled', False)])
                     
+                    # Assess S3 encryption compliance
+                    total_buckets = len(buckets)
+                    encrypted_buckets = len([b for b in buckets if b.get('encryption_enabled', False)])
+                    unencrypted_buckets = total_buckets - encrypted_buckets
+                    
+                    if total_buckets == 0:
+                        evidence['findings'].append("ℹ️ No S3 buckets found")
+                    elif encrypted_buckets == total_buckets:
+                        evidence['findings'].append(f"✅ All {total_buckets} S3 buckets are encrypted")
+                    elif encrypted_buckets > 0:
+                        evidence['findings'].append(f"⚠️ {encrypted_buckets}/{total_buckets} S3 buckets are encrypted")
+                        evidence['findings'].append(f"❌ {unencrypted_buckets} buckets are not encrypted")
+                        evidence['recommendations'].append(f"Enable encryption for {unencrypted_buckets} unencrypted S3 buckets")
+                        evidence['compliance_status'] = 'Partially Compliant'
+                    else:
+                        evidence['findings'].append(f"❌ None of the {total_buckets} S3 buckets are encrypted")
+                        evidence['recommendations'].append("Enable encryption for all S3 buckets immediately")
+                        evidence['compliance_status'] = 'Non-Compliant'
+                    
                 except ClientError as e:
                     evidence['data']['buckets_error'] = str(e)
+                    evidence['findings'].append(f"⚠️ Unable to verify S3 bucket encryption: {e}")
             
             # Check S3 bucket versioning
             if 'bucket_versioning_check' in control.get('checks', []):
@@ -229,12 +353,41 @@ class ComplianceEvidenceScraper:
                     
                     evidence['data']['versioning_status'] = versioning_status
                     
+                    # Assess S3 versioning compliance
+                    total_buckets = len(versioning_status)
+                    enabled_versioning = len([v for v in versioning_status.values() if v == 'Enabled'])
+                    disabled_versioning = total_buckets - enabled_versioning
+                    
+                    if total_buckets == 0:
+                        evidence['findings'].append("ℹ️ No S3 buckets found for versioning check")
+                    elif enabled_versioning == total_buckets:
+                        evidence['findings'].append(f"✅ All {total_buckets} S3 buckets have versioning enabled")
+                    elif enabled_versioning > 0:
+                        evidence['findings'].append(f"⚠️ {enabled_versioning}/{total_buckets} S3 buckets have versioning enabled")
+                        evidence['findings'].append(f"❌ {disabled_versioning} buckets do not have versioning enabled")
+                        evidence['recommendations'].append(f"Enable versioning for {disabled_versioning} S3 buckets")
+                        if evidence['compliance_status'] != 'Non-Compliant':
+                            evidence['compliance_status'] = 'Partially Compliant'
+                    else:
+                        evidence['findings'].append(f"❌ None of the {total_buckets} S3 buckets have versioning enabled")
+                        evidence['recommendations'].append("Enable versioning for all S3 buckets")
+                        evidence['compliance_status'] = 'Non-Compliant'
+                    
                 except ClientError as e:
                     evidence['data']['versioning_error'] = str(e)
+                    evidence['findings'].append(f"⚠️ Unable to verify S3 bucket versioning: {e}")
                     
         except Exception as e:
             evidence['error'] = str(e)
+            evidence['findings'].append(f"❌ Error collecting S3 evidence: {e}")
+            evidence['compliance_status'] = 'Error'
             self.logger.error(f"Error collecting S3 evidence for {control['id']}: {e}")
+        
+        # Set compliance status if not already set
+        if evidence['compliance_status'] == 'Unknown' and not evidence['findings']:
+            evidence['compliance_status'] = 'Compliant'
+        elif evidence['compliance_status'] == 'Unknown':
+            evidence['compliance_status'] = 'Compliant'
         
         return evidence
     
@@ -243,8 +396,14 @@ class ComplianceEvidenceScraper:
         evidence = {
             'control_id': control['id'],
             'control_name': control['name'],
+            'framework': control.get('framework', 'Unknown'),
+            'category': control.get('category', 'Unknown'),
             'evidence_type': 'cloudtrail',
             'timestamp': datetime.now(timezone.utc).isoformat(),
+            'risk_level': control.get('risk_level', 'Unknown'),
+            'compliance_status': 'Unknown',
+            'findings': [],
+            'recommendations': [],
             'data': {}
         }
         
@@ -279,8 +438,36 @@ class ComplianceEvidenceScraper:
                     evidence['data']['total_trails'] = len(trail_details)
                     evidence['data']['multi_region_trails'] = len([t for t in trail_details if t.get('is_multi_region_trail', False)])
                     
+                    # Assess CloudTrail configuration compliance
+                    total_trails = len(trail_details)
+                    multi_region_trails = len([t for t in trail_details if t.get('is_multi_region_trail', False)])
+                    log_validation_enabled = len([t for t in trail_details if t.get('log_file_validation_enabled', False)])
+                    
+                    if total_trails == 0:
+                        evidence['findings'].append("❌ No CloudTrail trails configured")
+                        evidence['recommendations'].append("Configure at least one CloudTrail trail")
+                        evidence['compliance_status'] = 'Non-Compliant'
+                    else:
+                        evidence['findings'].append(f"✅ {total_trails} CloudTrail trail(s) configured")
+                        
+                        if multi_region_trails > 0:
+                            evidence['findings'].append(f"✅ {multi_region_trails} multi-region trail(s) configured")
+                        else:
+                            evidence['findings'].append("❌ No multi-region CloudTrail trails configured")
+                            evidence['recommendations'].append("Configure at least one multi-region CloudTrail trail")
+                            evidence['compliance_status'] = 'Partially Compliant'
+                        
+                        if log_validation_enabled > 0:
+                            evidence['findings'].append(f"✅ {log_validation_enabled} trail(s) have log file validation enabled")
+                        else:
+                            evidence['findings'].append("⚠️ No trails have log file validation enabled")
+                            evidence['recommendations'].append("Enable log file validation for CloudTrail trails")
+                            if evidence['compliance_status'] != 'Non-Compliant':
+                                evidence['compliance_status'] = 'Partially Compliant'
+                    
                 except ClientError as e:
                     evidence['data']['trails_error'] = str(e)
+                    evidence['findings'].append(f"⚠️ Unable to verify CloudTrail configuration: {e}")
             
             # Check CloudTrail logging status
             if 'logging_status_check' in control.get('checks', []):
@@ -304,12 +491,41 @@ class ComplianceEvidenceScraper:
                     
                     evidence['data']['logging_status'] = logging_status
                     
+                    # Assess CloudTrail logging status compliance
+                    total_trails = len(logging_status)
+                    active_logging = len([s for s in logging_status.values() if s.get('is_logging', False)])
+                    inactive_logging = total_trails - active_logging
+                    
+                    if total_trails == 0:
+                        evidence['findings'].append("ℹ️ No CloudTrail trails found for logging status check")
+                    elif active_logging == total_trails:
+                        evidence['findings'].append(f"✅ All {total_trails} CloudTrail trail(s) are actively logging")
+                    elif active_logging > 0:
+                        evidence['findings'].append(f"⚠️ {active_logging}/{total_trails} CloudTrail trail(s) are actively logging")
+                        evidence['findings'].append(f"❌ {inactive_logging} trail(s) are not actively logging")
+                        evidence['recommendations'].append(f"Ensure {inactive_logging} CloudTrail trail(s) are actively logging")
+                        if evidence['compliance_status'] != 'Non-Compliant':
+                            evidence['compliance_status'] = 'Partially Compliant'
+                    else:
+                        evidence['findings'].append(f"❌ None of the {total_trails} CloudTrail trail(s) are actively logging")
+                        evidence['recommendations'].append("Ensure all CloudTrail trails are actively logging")
+                        evidence['compliance_status'] = 'Non-Compliant'
+                    
                 except ClientError as e:
                     evidence['data']['logging_status_error'] = str(e)
+                    evidence['findings'].append(f"⚠️ Unable to verify CloudTrail logging status: {e}")
                     
         except Exception as e:
             evidence['error'] = str(e)
+            evidence['findings'].append(f"❌ Error collecting CloudTrail evidence: {e}")
+            evidence['compliance_status'] = 'Error'
             self.logger.error(f"Error collecting CloudTrail evidence for {control['id']}: {e}")
+        
+        # Set compliance status if not already set
+        if evidence['compliance_status'] == 'Unknown' and not evidence['findings']:
+            evidence['compliance_status'] = 'Compliant'
+        elif evidence['compliance_status'] == 'Unknown':
+            evidence['compliance_status'] = 'Compliant'
         
         return evidence
     
@@ -318,8 +534,14 @@ class ComplianceEvidenceScraper:
         evidence = {
             'control_id': control['id'],
             'control_name': control['name'],
+            'framework': control.get('framework', 'Unknown'),
+            'category': control.get('category', 'Unknown'),
             'evidence_type': 'rds',
             'timestamp': datetime.now(timezone.utc).isoformat(),
+            'risk_level': control.get('risk_level', 'Unknown'),
+            'compliance_status': 'Unknown',
+            'findings': [],
+            'recommendations': [],
             'data': {}
         }
         
@@ -344,12 +566,40 @@ class ComplianceEvidenceScraper:
                     evidence['data']['total_instances'] = len(instances)
                     evidence['data']['encrypted_instances'] = len([i for i in instances if i.get('storage_encrypted', False)])
                     
+                    # Assess RDS encryption compliance
+                    total_instances = len(instances)
+                    encrypted_instances = len([i for i in instances if i.get('storage_encrypted', False)])
+                    unencrypted_instances = total_instances - encrypted_instances
+                    
+                    if total_instances == 0:
+                        evidence['findings'].append("ℹ️ No RDS instances found")
+                    elif encrypted_instances == total_instances:
+                        evidence['findings'].append(f"✅ All {total_instances} RDS instance(s) are encrypted")
+                    elif encrypted_instances > 0:
+                        evidence['findings'].append(f"⚠️ {encrypted_instances}/{total_instances} RDS instance(s) are encrypted")
+                        evidence['findings'].append(f"❌ {unencrypted_instances} instance(s) are not encrypted")
+                        evidence['recommendations'].append(f"Enable encryption for {unencrypted_instances} unencrypted RDS instance(s)")
+                        evidence['compliance_status'] = 'Partially Compliant'
+                    else:
+                        evidence['findings'].append(f"❌ None of the {total_instances} RDS instance(s) are encrypted")
+                        evidence['recommendations'].append("Enable encryption for all RDS instances immediately")
+                        evidence['compliance_status'] = 'Non-Compliant'
+                    
                 except ClientError as e:
                     evidence['data']['instances_error'] = str(e)
+                    evidence['findings'].append(f"⚠️ Unable to verify RDS encryption: {e}")
                     
         except Exception as e:
             evidence['error'] = str(e)
+            evidence['findings'].append(f"❌ Error collecting RDS evidence: {e}")
+            evidence['compliance_status'] = 'Error'
             self.logger.error(f"Error collecting RDS evidence for {control['id']}: {e}")
+        
+        # Set compliance status if not already set
+        if evidence['compliance_status'] == 'Unknown' and not evidence['findings']:
+            evidence['compliance_status'] = 'Compliant'
+        elif evidence['compliance_status'] == 'Unknown':
+            evidence['compliance_status'] = 'Compliant'
         
         return evidence
     
@@ -480,11 +730,18 @@ class ComplianceEvidenceScraper:
         # Summary statistics
         frameworks = {}
         evidence_types = {}
+        compliance_status = {}
+        risk_levels = {}
+        
         for evidence in self.evidence_collected:
             framework = evidence.get('framework', 'Unknown')
             frameworks[framework] = frameworks.get(framework, 0) + 1
             evidence_type = evidence.get('evidence_type', 'Unknown')
             evidence_types[evidence_type] = evidence_types.get(evidence_type, 0) + 1
+            status = evidence.get('compliance_status', 'Unknown')
+            compliance_status[status] = compliance_status.get(status, 0) + 1
+            risk_level = evidence.get('risk_level', 'Unknown')
+            risk_levels[risk_level] = risk_levels.get(risk_level, 0) + 1
         
         report_lines.extend([
             "### Frameworks Covered",
@@ -503,36 +760,79 @@ class ComplianceEvidenceScraper:
         
         report_lines.extend([
             "",
+            "### Compliance Status Summary",
+            ""
+        ])
+        for status, count in compliance_status.items():
+            status_icon = "✅" if status == "Compliant" else "⚠️" if status == "Partially Compliant" else "❌" if status == "Non-Compliant" else "❓"
+            report_lines.append(f"- {status_icon} **{status}:** {count} controls")
+        
+        report_lines.extend([
+            "",
+            "### Risk Level Distribution",
+            ""
+        ])
+        for risk_level, count in risk_levels.items():
+            risk_icon = "🔴" if risk_level == "Critical" else "🟠" if risk_level == "High" else "🟡" if risk_level == "Medium" else "🟢" if risk_level == "Low" else "⚪"
+            report_lines.append(f"- {risk_icon} **{risk_level}:** {count} controls")
+        
+        report_lines.extend([
+            "",
             "## Detailed Evidence",
             ""
         ])
         
         # Detailed evidence for each control
         for evidence in self.evidence_collected:
+            # Determine status icon
+            status = evidence.get('compliance_status', 'Unknown')
+            status_icon = "✅" if status == "Compliant" else "⚠️" if status == "Partially Compliant" else "❌" if status == "Non-Compliant" else "❓"
+            
+            # Determine risk icon
+            risk_level = evidence.get('risk_level', 'Unknown')
+            risk_icon = "🔴" if risk_level == "Critical" else "🟠" if risk_level == "High" else "🟡" if risk_level == "Medium" else "🟢" if risk_level == "Low" else "⚪"
+            
             report_lines.extend([
                 f"### {evidence['control_id']} - {evidence['control_name']}",
                 "",
+                f"**Framework:** {evidence.get('framework', 'Unknown')}",
+                f"**Category:** {evidence.get('category', 'Unknown')}",
                 f"**Type:** {evidence['evidence_type']}",
+                f"**Risk Level:** {risk_icon} {risk_level}",
+                f"**Compliance Status:** {status_icon} {status}",
                 f"**Timestamp:** {evidence['timestamp']}",
                 ""
             ])
             
             if 'error' in evidence:
                 report_lines.extend([
-                    "**Status:** ❌ Error",
-                    f"**Error:** {evidence['error']}",
+                    "**Error Details:**",
+                    f"```",
+                    f"{evidence['error']}",
+                    f"```",
                     ""
                 ])
             else:
-                report_lines.extend([
-                    "**Status:** ✅ Collected",
-                    ""
-                ])
+                # Add findings
+                findings = evidence.get('findings', [])
+                if findings:
+                    report_lines.append("**Findings:**")
+                    for finding in findings:
+                        report_lines.append(f"- {finding}")
+                    report_lines.append("")
                 
-                # Add key findings
+                # Add recommendations
+                recommendations = evidence.get('recommendations', [])
+                if recommendations:
+                    report_lines.append("**Recommendations:**")
+                    for recommendation in recommendations:
+                        report_lines.append(f"- {recommendation}")
+                    report_lines.append("")
+                
+                # Add key data summary
                 data = evidence.get('data', {})
                 if data:
-                    report_lines.append("**Key Findings:**")
+                    report_lines.append("**Data Summary:**")
                     for key, value in data.items():
                         if isinstance(value, (dict, list)):
                             report_lines.append(f"- **{key}:** {len(value)} items")
@@ -555,31 +855,31 @@ class ComplianceEvidenceScraper:
         
         # Header
         writer.writerow([
-            'Control ID', 'Control Name', 'Framework', 'Evidence Type', 
-            'Timestamp', 'Status', 'Key Findings'
+            'Control ID', 'Control Name', 'Framework', 'Category', 'Evidence Type', 
+            'Risk Level', 'Compliance Status', 'Timestamp', 'Findings', 'Recommendations'
         ])
         
         # Data rows
         for evidence in self.evidence_collected:
-            status = "Error" if 'error' in evidence else "Collected"
+            # Extract findings
+            findings = evidence.get('findings', [])
+            findings_text = '; '.join(findings) if findings else 'No findings'
             
-            # Extract key findings
-            findings = []
-            data = evidence.get('data', {})
-            for key, value in data.items():
-                if isinstance(value, (dict, list)):
-                    findings.append(f"{key}: {len(value)} items")
-                else:
-                    findings.append(f"{key}: {value}")
+            # Extract recommendations
+            recommendations = evidence.get('recommendations', [])
+            recommendations_text = '; '.join(recommendations) if recommendations else 'No recommendations'
             
             writer.writerow([
                 evidence['control_id'],
                 evidence['control_name'],
                 evidence.get('framework', ''),
+                evidence.get('category', ''),
                 evidence['evidence_type'],
+                evidence.get('risk_level', ''),
+                evidence.get('compliance_status', ''),
                 evidence['timestamp'],
-                status,
-                '; '.join(findings)
+                findings_text,
+                recommendations_text
             ])
         
         return output.getvalue()
