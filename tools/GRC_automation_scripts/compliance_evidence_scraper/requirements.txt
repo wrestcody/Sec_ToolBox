@@ -1,0 +1,45 @@
+# Cloud Compliance Evidence Scraper - Python Dependencies
+# Core AWS SDK
+boto3>=1.34.0
+botocore>=1.34.0
+
+# YAML configuration parsing
+PyYAML>=6.0.1
+
+# CLI argument parsing (included in Python standard library)
+# argparse
+
+# JSON handling (included in Python standard library)
+# json
+
+# CSV handling (included in Python standard library)
+# csv
+
+# Logging (included in Python standard library)
+# logging
+
+# Date/time handling (included in Python standard library)
+# datetime
+
+# File path handling (included in Python standard library)
+# pathlib
+
+# Type hints (included in Python standard library)
+# typing
+
+# System utilities (included in Python standard library)
+# sys
+
+# String I/O (included in Python standard library)
+# io
+
+# Development and testing dependencies (optional)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+
+# Documentation generation (optional)
+sphinx>=7.0.0
+sphinx-rtd-theme>=1.3.0

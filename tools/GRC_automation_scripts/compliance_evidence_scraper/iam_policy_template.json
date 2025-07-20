@@ -1,0 +1,73 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ComplianceEvidenceScraperReadOnly",
+            "Effect": "Allow",
+            "Action": [
+                "iam:GetAccountSummary",
+                "iam:GetAccountPasswordPolicy",
+                "iam:ListUsers",
+                "iam:ListAttachedUserPolicies",
+                "iam:ListUserPolicies",
+                "iam:GetUser",
+                "s3:ListBuckets",
+                "s3:GetBucketEncryption",
+                "s3:GetBucketVersioning",
+                "s3:GetBucketPolicy",
+                "s3:GetBucketPublicAccessBlock",
+                "cloudtrail:ListTrails",
+                "cloudtrail:GetTrail",
+                "cloudtrail:GetTrailStatus",
+                "cloudtrail:DescribeTrails",
+                "rds:DescribeDBInstances",
+                "rds:DescribeDBClusters",
+                "rds:DescribeDBClusterSnapshots",
+                "rds:DescribeDBSnapshots",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeVpcs",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeInstances",
+                "ec2:DescribeVolumes",
+                "kms:ListKeys",
+                "kms:DescribeKey",
+                "kms:ListAliases",
+                "sts:GetCallerIdentity",
+                "organizations:DescribeAccount",
+                "organizations:ListAccounts",
+                "config:GetComplianceDetailsByConfigRule",
+                "config:DescribeConfigRules",
+                "config:GetComplianceSummaryByConfigRule",
+                "cloudwatch:DescribeLogGroups",
+                "cloudwatch:DescribeLogStreams",
+                "cloudwatch:GetLogEvents",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+                "logs:GetLogEvents"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "ComplianceEvidenceScraperDenyWrite",
+            "Effect": "Deny",
+            "Action": [
+                "iam:*",
+                "s3:*",
+                "cloudtrail:*",
+                "rds:*",
+                "ec2:*",
+                "kms:*",
+                "organizations:*",
+                "config:*",
+                "cloudwatch:*",
+                "logs:*"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringNotEquals": {
+                    "aws:RequestedRegion": "us-east-1"
+                }
+            }
+        }
+    ]
+}

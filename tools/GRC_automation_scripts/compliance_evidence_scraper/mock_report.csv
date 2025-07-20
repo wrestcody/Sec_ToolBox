@@ -1,0 +1,4 @@
+Control ID,Control Name,Framework,Evidence Type,Timestamp,Status,Key Findings
+CC6.1,Logical access is restricted to authorized users,SOC 2,iam,2025-07-20T23:27:43.100304,Mock Data Generated,root_mfa_enabled: True; root_mfa_status: Enabled; password_policy: 7 items; admin_users_count: 3; admin_users: 3 items
+CC6.2,Access to systems and data is restricted to authorized personnel,SOC 2,iam,2025-07-20T23:27:43.100355,Mock Data Generated,root_mfa_enabled: True; root_mfa_status: Enabled; password_policy: 7 items; admin_users_count: 3; admin_users: 3 items
+A.12.4.1,Event logging and monitoring,ISO 27001,cloudtrail,2025-07-20T23:27:43.100363,Mock Data Generated,total_trails: 2; multi_region_trails: 1; trails: 2 items; logging_status: 2 items
