@@ -1,0 +1,310 @@
+{
+  "audit_metadata": {
+    "report_generated": "2025-07-20T23:50:23.426595",
+    "tool_version": "1.0.0",
+    "analysis_parameters": {
+      "baseline_days": 30,
+      "detection_days": 1,
+      "baseline_start": "2025-06-19T23:50:23.426479",
+      "baseline_end": "2025-07-19T23:50:23.426479",
+      "detection_start": "2025-07-19T23:50:23.426479",
+      "detection_end": "2025-07-20T23:50:23.426479",
+      "total_logs_processed": 14
+    },
+    "compliance_frameworks": {
+      "SOC2": [
+        "CC6.1",
+        "CC6.2",
+        "CC6.3"
+      ],
+      "ISO27001": [
+        "A.9.2.1",
+        "A.9.2.2",
+        "A.9.2.3"
+      ],
+      "NIST": [
+        "AC-2",
+        "AC-3",
+        "AC-6"
+      ],
+      "CIS": [
+        "1.1",
+        "1.2",
+        "1.3"
+      ]
+    },
+    "audit_trail": [
+      {
+        "timestamp": "2025-07-20T23:50:23.426368",
+        "event_type": "analysis_started",
+        "details": {
+          "log_file": "tools/cloud_configuration_auditors/iam_anomaly_detector/mock_cloudtrail_logs.json",
+          "detection_days": 1,
+          "output_format": "audit",
+          "baseline_days": 30
+        }
+      },
+      {
+        "timestamp": "2025-07-20T23:50:23.426477",
+        "event_type": "logs_loaded",
+        "details": {
+          "total_logs": 14,
+          "log_file": "tools/cloud_configuration_auditors/iam_anomaly_detector/mock_cloudtrail_logs.json"
+        }
+      },
+      {
+        "timestamp": "2025-07-20T23:50:23.426580",
+        "event_type": "baseline_built",
+        "details": {
+          "baseline_logs": 8,
+          "users_with_baselines": 3,
+          "baseline_start": "2025-06-19T23:50:23.426479",
+          "baseline_end": "2025-07-19T23:50:23.426479"
+        }
+      },
+      {
+        "timestamp": "2025-07-20T23:50:23.426593",
+        "event_type": "anomalies_detected",
+        "details": {
+          "detection_logs": 1,
+          "anomalies_found": 1,
+          "detection_start": "2025-07-19T23:50:23.426479",
+          "detection_end": "2025-07-20T23:50:23.426479"
+        }
+      }
+    ],
+    "data_quality": {
+      "overall_quality": "GOOD",
+      "total_users": 3,
+      "total_baseline_events": 8,
+      "average_events_per_user": 2.67,
+      "baseline_days": 30,
+      "issues": [
+        "Limited baseline data available",
+        "2 users have minimal baseline data"
+      ],
+      "recommendations": [
+        "Extend baseline period or include more historical data",
+        "Ensure all users have sufficient activity history"
+      ]
+    }
+  },
+  "executive_summary": {
+    "total_anomalies": 1,
+    "critical_anomalies": 0,
+    "high_anomalies": 0,
+    "medium_anomalies": 1,
+    "low_anomalies": 0,
+    "total_users_analyzed": 3,
+    "overall_risk_level": "MEDIUM"
+  },
+  "compliance_assessment": {
+    "soc2": {
+      "CC6.1": {
+        "status": "COMPLIANT",
+        "findings": []
+      },
+      "CC6.2": {
+        "status": "NON_COMPLIANT",
+        "findings": [
+          {
+            "anomaly_type": "first_time_role_assumption",
+            "severity": "medium",
+            "description": "User 'john.doe' assumed role for the first time: arn:aws:iam::123456789012:role/AdminRole"
+          }
+        ]
+      },
+      "CC6.3": {
+        "status": "COMPLIANT",
+        "findings": []
+      }
+    },
+    "iso27001": {
+      "A.9.2.1": {
+        "status": "COMPLIANT",
+        "findings": []
+      },
+      "A.9.2.2": {
+        "status": "NON_COMPLIANT",
+        "findings": [
+          {
+            "anomaly_type": "first_time_role_assumption",
+            "severity": "medium",
+            "description": "User 'john.doe' assumed role for the first time: arn:aws:iam::123456789012:role/AdminRole"
+          }
+        ]
+      },
+      "A.9.2.3": {
+        "status": "COMPLIANT",
+        "findings": []
+      }
+    },
+    "nist": {
+      "AC-2": {
+        "status": "COMPLIANT",
+        "findings": []
+      },
+      "AC-3": {
+        "status": "NON_COMPLIANT",
+        "findings": [
+          {
+            "anomaly_type": "first_time_role_assumption",
+            "severity": "medium",
+            "description": "User 'john.doe' assumed role for the first time: arn:aws:iam::123456789012:role/AdminRole"
+          }
+        ]
+      },
+      "AC-6": {
+        "status": "COMPLIANT",
+        "findings": []
+      }
+    },
+    "cis": {
+      "1.1": {
+        "status": "COMPLIANT",
+        "findings": []
+      },
+      "1.2": {
+        "status": "COMPLIANT",
+        "findings": []
+      },
+      "1.3": {
+        "status": "COMPLIANT",
+        "findings": []
+      }
+    }
+  },
+  "detailed_findings": {
+    "anomalies": [
+      {
+        "event_time": "2025-07-20T09:15:00Z",
+        "username": "john.doe",
+        "event_name": "AssumeRole",
+        "source_ip": "203.0.113.45",
+        "aws_region": "eu-west-1",
+        "anomaly_type": "first_time_role_assumption",
+        "description": "User 'john.doe' assumed role for the first time: arn:aws:iam::123456789012:role/AdminRole",
+        "severity": "medium",
+        "recommendation": "Verify role assumption is legitimate and review role permissions",
+        "compliance_impact": [
+          "SOC2:CC6.2",
+          "ISO27001:A.9.2.2",
+          "NIST:AC-3"
+        ],
+        "risk_score": 7,
+        "evidence": {
+          "baseline_roles": [
+            "arn:aws:iam::123456789012:role/DeveloperRole"
+          ],
+          "new_role": "arn:aws:iam::123456789012:role/AdminRole",
+          "user_role_history": 1,
+          "user_first_seen": "2025-07-15T10:30:00+00:00",
+          "user_last_seen": "2025-07-19T15:30:00+00:00",
+          "total_user_events": 4,
+          "user_activity_frequency": {
+            "ConsoleLogin": 3,
+            "AssumeRole": 1
+          },
+          "analysis_timestamp": "2025-07-20T23:50:23.426590"
+        }
+      }
+    ],
+    "user_baselines": {
+      "john.doe": {
+        "source_ips": [
+          "192.168.1.100",
+          "203.0.113.45"
+        ],
+        "aws_regions": [
+          "us-east-1",
+          "eu-west-1"
+        ],
+        "event_names": [
+          "ConsoleLogin",
+          "AssumeRole"
+        ],
+        "assumed_roles": [
+          "arn:aws:iam::123456789012:role/DeveloperRole"
+        ],
+        "policy_changes": 0,
+        "total_events": 4,
+        "first_seen": "2025-07-15T10:30:00+00:00",
+        "last_seen": "2025-07-19T15:30:00+00:00",
+        "activity_frequency": {
+          "ConsoleLogin": 3,
+          "AssumeRole": 1
+        }
+      },
+      "jane.smith": {
+        "source_ips": [
+          "10.0.0.50"
+        ],
+        "aws_regions": [
+          "us-west-2"
+        ],
+        "event_names": [
+          "PutUserPolicy",
+          "ConsoleLogin"
+        ],
+        "assumed_roles": [],
+        "policy_changes": 1,
+        "total_events": 2,
+        "first_seen": "2025-07-16T09:00:00+00:00",
+        "last_seen": "2025-07-16T14:30:00+00:00",
+        "activity_frequency": {
+          "ConsoleLogin": 1,
+          "PutUserPolicy": 1
+        }
+      },
+      "admin.user": {
+        "source_ips": [
+          "172.16.0.10"
+        ],
+        "aws_regions": [
+          "us-east-1"
+        ],
+        "event_names": [
+          "ConsoleLogin",
+          "AttachUserPolicy"
+        ],
+        "assumed_roles": [],
+        "policy_changes": 1,
+        "total_events": 2,
+        "first_seen": "2025-07-17T08:45:00+00:00",
+        "last_seen": "2025-07-17T10:20:00+00:00",
+        "activity_frequency": {
+          "ConsoleLogin": 1,
+          "AttachUserPolicy": 1
+        }
+      }
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "MEDIUM",
+      "category": "First Time Role Assumption",
+      "description": "Address 1 first time role assumption anomaly(ies)",
+      "action_items": [
+        "Verify role assumption is legitimate and review role permissions"
+      ],
+      "affected_users": [
+        "john.doe"
+      ],
+      "risk_score": 7
+    }
+  ],
+  "risk_assessment": {
+    "overall_risk": "MEDIUM",
+    "average_risk_score": 7.0,
+    "total_risk_score": 7,
+    "risk_factors": [
+      {
+        "factor": "first_time_role_assumption",
+        "severity": "medium",
+        "risk_score": 7,
+        "description": "User 'john.doe' assumed role for the first time: arn:aws:iam::123456789012:role/AdminRole",
+        "affected_user": "john.doe"
+      }
+    ]
+  }
+}

@@ -41,7 +41,8 @@ class IAMAnomalyDetector:
                 'ISO27001': ['A.9.2.1', 'A.9.2.2', 'A.9.2.3'],
                 'NIST': ['AC-2', 'AC-3', 'AC-6'],
                 'CIS': ['1.1', '1.2', '1.3']
-            }
+            },
+            'audit_trail': []
         }
         
     def load_cloudtrail_logs(self, log_file: str) -> List[Dict[str, Any]]:
@@ -59,11 +60,27 @@ class IAMAnomalyDetector:
                 logs = json.load(f)
             
             if isinstance(logs, dict) and 'Records' in logs:
-                return logs['Records']
+                records = logs['Records']
             elif isinstance(logs, list):
-                return logs
+                records = logs
             else:
                 raise ValueError("Invalid CloudTrail log format")
+            
+            # Validate and clean log entries
+            validated_logs = []
+            invalid_logs = 0
+            
+            for i, log in enumerate(records):
+                if self._validate_log_entry(log):
+                    validated_logs.append(log)
+                else:
+                    invalid_logs += 1
+                    print(f"Warning: Invalid log entry at index {i}, skipping")
+            
+            if invalid_logs > 0:
+                print(f"Warning: {invalid_logs} invalid log entries were skipped")
+            
+            return validated_logs
                 
         except FileNotFoundError:
             print(f"Error: Log file '{log_file}' not found.")
@@ -74,6 +91,55 @@ class IAMAnomalyDetector:
         except Exception as e:
             print(f"Error loading logs: {e}")
             sys.exit(1)
+    
+    def _validate_log_entry(self, log: Dict[str, Any]) -> bool:
+        """
+        Validate a CloudTrail log entry for required fields.
+        
+        Args:
+            log: CloudTrail log entry
+            
+        Returns:
+            True if valid, False otherwise
+        """
+        required_fields = ['eventTime', 'eventName', 'userIdentity']
+        
+        # Check required fields exist
+        for field in required_fields:
+            if field not in log:
+                return False
+        
+        # Validate userIdentity structure
+        user_identity = log.get('userIdentity', {})
+        if not isinstance(user_identity, dict):
+            return False
+        
+        # Check for valid eventTime format
+        try:
+            event_time = log['eventTime']
+            if event_time.endswith('Z'):
+                datetime.fromisoformat(event_time.replace('Z', '+00:00'))
+            else:
+                datetime.fromisoformat(event_time)
+        except (ValueError, TypeError):
+            return False
+        
+        return True
+    
+    def _add_audit_event(self, event_type: str, details: Dict[str, Any]):
+        """
+        Add an event to the audit trail.
+        
+        Args:
+            event_type: Type of audit event
+            details: Event details
+        """
+        audit_event = {
+            'timestamp': datetime.now().isoformat(),
+            'event_type': event_type,
+            'details': details
+        }
+        self.audit_metadata['audit_trail'].append(audit_event)
     
     def filter_logs_by_time_window(self, logs: List[Dict[str, Any]], 
                                   start_time: datetime, 
@@ -247,7 +313,12 @@ class IAMAnomalyDetector:
                             'evidence': {
                                 'baseline_ips': baseline['source_ips'],
                                 'new_ip': source_ip,
-                                'user_activity_history': baseline['total_events']
+                                'user_activity_history': baseline['total_events'],
+                                'user_first_seen': baseline.get('first_seen'),
+                                'user_last_seen': baseline.get('last_seen'),
+                                'total_baseline_events': baseline['total_events'],
+                                'baseline_regions': baseline['aws_regions'],
+                                'analysis_timestamp': datetime.now().isoformat()
                             }
                         })
                     
@@ -267,7 +338,12 @@ class IAMAnomalyDetector:
                             'evidence': {
                                 'baseline_regions': baseline['aws_regions'],
                                 'new_region': aws_region,
-                                'user_activity_history': baseline['total_events']
+                                'user_activity_history': baseline['total_events'],
+                                'user_first_seen': baseline.get('first_seen'),
+                                'user_last_seen': baseline.get('last_seen'),
+                                'total_baseline_events': baseline['total_events'],
+                                'baseline_ips': baseline['source_ips'],
+                                'analysis_timestamp': datetime.now().isoformat()
                             }
                         })
                 
@@ -290,7 +366,11 @@ class IAMAnomalyDetector:
                             'evidence': {
                                 'baseline_policy_changes': baseline['policy_changes'],
                                 'total_user_events': baseline['total_events'],
-                                'policy_change_frequency': baseline['policy_changes'] / max(baseline['total_events'], 1)
+                                'policy_change_frequency': baseline['policy_changes'] / max(baseline['total_events'], 1),
+                                'user_first_seen': baseline.get('first_seen'),
+                                'user_last_seen': baseline.get('last_seen'),
+                                'user_activity_frequency': baseline.get('activity_frequency', {}),
+                                'analysis_timestamp': datetime.now().isoformat()
                             }
                         })
                     
@@ -313,7 +393,12 @@ class IAMAnomalyDetector:
                             'evidence': {
                                 'policy_document': policy_document,
                                 'wildcard_detected': True,
-                                'user_privilege_level': 'high' if baseline['policy_changes'] > 5 else 'medium'
+                                'user_privilege_level': 'high' if baseline['policy_changes'] > 5 else 'medium',
+                                'user_first_seen': baseline.get('first_seen'),
+                                'user_last_seen': baseline.get('last_seen'),
+                                'baseline_policy_changes': baseline['policy_changes'],
+                                'total_user_events': baseline['total_events'],
+                                'analysis_timestamp': datetime.now().isoformat()
                             }
                         })
                 
@@ -336,7 +421,12 @@ class IAMAnomalyDetector:
                             'evidence': {
                                 'baseline_roles': baseline['assumed_roles'],
                                 'new_role': role_arn,
-                                'user_role_history': len(baseline['assumed_roles'])
+                                'user_role_history': len(baseline['assumed_roles']),
+                                'user_first_seen': baseline.get('first_seen'),
+                                'user_last_seen': baseline.get('last_seen'),
+                                'total_user_events': baseline['total_events'],
+                                'user_activity_frequency': baseline.get('activity_frequency', {}),
+                                'analysis_timestamp': datetime.now().isoformat()
                             }
                         })
                 
@@ -357,7 +447,11 @@ class IAMAnomalyDetector:
                         'evidence': {
                             'baseline_events': baseline['event_names'],
                             'new_event': event_name,
-                            'user_event_history': baseline['total_events']
+                            'user_event_history': baseline['total_events'],
+                            'user_first_seen': baseline.get('first_seen'),
+                            'user_last_seen': baseline.get('last_seen'),
+                            'user_activity_frequency': baseline.get('activity_frequency', {}),
+                            'analysis_timestamp': datetime.now().isoformat()
                         }
                     })
                     
@@ -386,7 +480,9 @@ class IAMAnomalyDetector:
                 'report_generated': datetime.now().isoformat(),
                 'tool_version': '1.0.0',
                 'analysis_parameters': analysis_metadata,
-                'compliance_frameworks': self.audit_metadata['compliance_frameworks']
+                'compliance_frameworks': self.audit_metadata['compliance_frameworks'],
+                'audit_trail': self.audit_metadata['audit_trail'],
+                'data_quality': self._assess_data_quality(user_baselines, analysis_metadata)
             },
             'executive_summary': {
                 'total_anomalies': len(anomalies),
@@ -418,13 +514,17 @@ class IAMAnomalyDetector:
         if not anomalies:
             return 'LOW'
         
-        max_risk_score = max(anomaly.get('risk_score', 0) for anomaly in anomalies)
+        # Count anomalies by severity
+        severity_counts = defaultdict(int)
+        for anomaly in anomalies:
+            severity_counts[anomaly.get('severity', 'low')] += 1
         
-        if max_risk_score >= 9:
+        # Determine overall risk based on highest severity and count
+        if severity_counts.get('critical', 0) > 0:
             return 'CRITICAL'
-        elif max_risk_score >= 7:
+        elif severity_counts.get('high', 0) > 0:
             return 'HIGH'
-        elif max_risk_score >= 5:
+        elif severity_counts.get('medium', 0) > 0:
             return 'MEDIUM'
         else:
             return 'LOW'
@@ -573,6 +673,66 @@ class IAMAnomalyDetector:
             'risk_factors': sorted(risk_factors, key=lambda x: x['risk_score'], reverse=True)
         }
     
+    def _assess_data_quality(self, user_baselines: Dict[str, Any], 
+                           analysis_metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Assess the quality of data used for analysis.
+        
+        Args:
+            user_baselines: Dictionary of user baseline profiles
+            analysis_metadata: Metadata about the analysis
+            
+        Returns:
+            Data quality assessment
+        """
+        if not user_baselines:
+            return {
+                'overall_quality': 'POOR',
+                'issues': ['No user baselines available'],
+                'recommendations': ['Ensure sufficient baseline data is available']
+            }
+        
+        issues = []
+        recommendations = []
+        
+        # Check baseline data sufficiency
+        total_baseline_events = sum(baseline.get('total_events', 0) for baseline in user_baselines.values())
+        if total_baseline_events < 10:
+            issues.append('Limited baseline data available')
+            recommendations.append('Extend baseline period or include more historical data')
+        
+        # Check user coverage
+        users_with_minimal_data = sum(1 for baseline in user_baselines.values() if baseline.get('total_events', 0) < 3)
+        if users_with_minimal_data > 0:
+            issues.append(f'{users_with_minimal_data} users have minimal baseline data')
+            recommendations.append('Ensure all users have sufficient activity history')
+        
+        # Check time coverage
+        baseline_days = analysis_metadata.get('baseline_days', 30)
+        if baseline_days < 14:
+            issues.append('Baseline period may be too short')
+            recommendations.append('Consider extending baseline period to at least 30 days')
+        
+        # Determine overall quality
+        if len(issues) == 0:
+            overall_quality = 'EXCELLENT'
+        elif len(issues) <= 2:
+            overall_quality = 'GOOD'
+        elif len(issues) <= 4:
+            overall_quality = 'FAIR'
+        else:
+            overall_quality = 'POOR'
+        
+        return {
+            'overall_quality': overall_quality,
+            'total_users': len(user_baselines),
+            'total_baseline_events': total_baseline_events,
+            'average_events_per_user': round(total_baseline_events / len(user_baselines), 2) if user_baselines else 0,
+            'baseline_days': baseline_days,
+            'issues': issues,
+            'recommendations': recommendations
+        }
+    
     def export_to_csv(self, anomalies: List[Dict[str, Any]], output_file: str):
         """Export anomalies to CSV format for audit evidence."""
         if not anomalies:
@@ -655,10 +815,23 @@ class IAMAnomalyDetector:
         print("🔍 Cloud IAM Behavioral Anomaly Detector")
         print("=" * 50)
         
+        # Initialize audit trail
+        self._add_audit_event("analysis_started", {
+            "log_file": log_file,
+            "detection_days": detection_days,
+            "output_format": output_format,
+            "baseline_days": self.baseline_days
+        })
+        
         # Load logs
         print(f"📁 Loading CloudTrail logs from: {log_file}")
         all_logs = self.load_cloudtrail_logs(log_file)
         print(f"   Loaded {len(all_logs)} log entries")
+        
+        self._add_audit_event("logs_loaded", {
+            "total_logs": len(all_logs),
+            "log_file": log_file
+        })
         
         # Calculate time windows
         end_time = datetime.now()
@@ -690,11 +863,25 @@ class IAMAnomalyDetector:
         user_baselines = self.build_user_baseline(baseline_logs)
         print(f"   Built baselines for {len(user_baselines)} users")
         
+        self._add_audit_event("baseline_built", {
+            "baseline_logs": len(baseline_logs),
+            "users_with_baselines": len(user_baselines),
+            "baseline_start": baseline_start.isoformat(),
+            "baseline_end": detection_start.isoformat()
+        })
+        
         print(f"\n🔍 Anomaly Detection:")
         print(f"   {len(detection_logs)} log entries in detection period")
         
         # Detect anomalies
         anomalies = self.detect_anomalies(detection_logs, user_baselines)
+        
+        self._add_audit_event("anomalies_detected", {
+            "detection_logs": len(detection_logs),
+            "anomalies_found": len(anomalies),
+            "detection_start": detection_start.isoformat(),
+            "detection_end": end_time.isoformat()
+        })
         
         # Generate output based on format
         if output_format == 'console':
@@ -735,6 +922,16 @@ class IAMAnomalyDetector:
             print(f"   Severity breakdown:")
             for severity, count in sorted(severity_counts.items(), key=lambda x: ['critical', 'high', 'medium', 'low'].index(x[0])):
                 print(f"     {severity.title()}: {count}")
+        
+        # Final audit event
+        self._add_audit_event("analysis_completed", {
+            "total_logs_processed": len(all_logs),
+            "users_with_baselines": len(user_baselines),
+            "anomalies_detected": len(anomalies),
+            "output_format": output_format,
+            "output_file": output_file,
+            "severity_breakdown": dict(severity_counts) if anomalies else {}
+        })
 
 
 def main():
