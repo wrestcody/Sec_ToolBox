@@ -10,7 +10,7 @@ import json
 import yaml
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Any
 
 def load_controls_mapping(config_path: str) -> Dict[str, Any]:
@@ -82,7 +82,7 @@ def generate_mock_evidence(config: Dict[str, Any]) -> List[Dict[str, Any]]:
             'control_name': control['name'],
             'framework': control['framework'],
             'evidence_type': control['type'],
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'data': {}
         }
         
@@ -200,7 +200,7 @@ def generate_mock_report(evidence: List[Dict[str, Any]], output_format: str = 'j
     if output_format == 'json':
         report = {
             'metadata': {
-                'generated_at': datetime.utcnow().isoformat(),
+                'generated_at': datetime.now(timezone.utc).isoformat(),
                 'region': 'us-east-1',
                 'total_controls_checked': len(evidence),
                 'note': 'This is mock data for demonstration purposes'
@@ -213,7 +213,7 @@ def generate_mock_report(evidence: List[Dict[str, Any]], output_format: str = 'j
         report_lines = [
             "# Cloud Compliance Evidence Report (Mock Data)",
             "",
-            f"**Generated:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}",
+            f"**Generated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
             "**AWS Region:** us-east-1",
             f"**Controls Checked:** {len(evidence)}",
             "**Note:** This is mock data for demonstration purposes",

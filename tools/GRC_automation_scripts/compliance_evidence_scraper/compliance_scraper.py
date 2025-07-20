@@ -12,9 +12,10 @@ This tool performs READ-ONLY operations and should never modify cloud configurat
 import argparse
 import json
 import logging
+import os
 import sys
 import yaml
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
@@ -49,13 +50,41 @@ class ComplianceEvidenceScraper:
     def _load_controls_mapping(self) -> Dict[str, Any]:
         """Load the controls mapping from YAML file."""
         try:
-            with open(self.config_path, 'r') as file:
-                return yaml.safe_load(file)
+            # Validate file path to prevent path traversal
+            config_path = Path(self.config_path).resolve()
+            if not config_path.exists():
+                self.logger.error(f"Controls mapping file not found: {self.config_path}")
+                sys.exit(1)
+            
+            # Check file size to prevent DoS attacks
+            if config_path.stat().st_size > 1024 * 1024:  # 1MB limit
+                self.logger.error("Configuration file too large (max 1MB)")
+                sys.exit(1)
+            
+            with open(config_path, 'r') as file:
+                config = yaml.safe_load(file)
+                
+            # Validate required configuration structure
+            if not isinstance(config, dict):
+                self.logger.error("Invalid configuration format: must be a dictionary")
+                sys.exit(1)
+                
+            required_keys = ['metadata', 'controls', 'evidence_methods']
+            for key in required_keys:
+                if key not in config:
+                    self.logger.error(f"Missing required configuration section: {key}")
+                    sys.exit(1)
+                    
+            return config
+            
         except FileNotFoundError:
             self.logger.error(f"Controls mapping file not found: {self.config_path}")
             sys.exit(1)
         except yaml.YAMLError as e:
             self.logger.error(f"Error parsing YAML file: {e}")
+            sys.exit(1)
+        except Exception as e:
+            self.logger.error(f"Unexpected error loading configuration: {e}")
             sys.exit(1)
     
     def _initialize_aws_clients(self) -> Dict[str, Any]:
@@ -81,7 +110,7 @@ class ComplianceEvidenceScraper:
             'control_id': control['id'],
             'control_name': control['name'],
             'evidence_type': 'iam',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'data': {}
         }
         
@@ -141,7 +170,7 @@ class ComplianceEvidenceScraper:
             'control_id': control['id'],
             'control_name': control['name'],
             'evidence_type': 's3',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'data': {}
         }
         
@@ -215,7 +244,7 @@ class ComplianceEvidenceScraper:
             'control_id': control['id'],
             'control_name': control['name'],
             'evidence_type': 'cloudtrail',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'data': {}
         }
         
@@ -290,7 +319,7 @@ class ComplianceEvidenceScraper:
             'control_id': control['id'],
             'control_name': control['name'],
             'evidence_type': 'rds',
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(timezone.utc).isoformat(),
             'data': {}
         }
         
@@ -390,7 +419,7 @@ class ComplianceEvidenceScraper:
         if output_format == 'json':
             report = {
                 'metadata': {
-                    'generated_at': datetime.utcnow().isoformat(),
+                    'generated_at': datetime.now(timezone.utc).isoformat(),
                     'region': self.region,
                     'total_controls_checked': len(self.evidence_collected)
                 },
@@ -408,9 +437,30 @@ class ComplianceEvidenceScraper:
             raise ValueError(f"Unsupported output format: {output_format}")
         
         if output_file:
-            with open(output_file, 'w') as f:
-                f.write(report_content)
-            self.logger.info(f"Report saved to: {output_file}")
+            # Validate output file path to prevent path traversal
+            output_path = Path(output_file).resolve()
+            
+            # Ensure output directory exists and is writable
+            output_dir = output_path.parent
+            if not output_dir.exists():
+                try:
+                    output_dir.mkdir(parents=True, exist_ok=True)
+                except Exception as e:
+                    self.logger.error(f"Cannot create output directory: {e}")
+                    raise
+            
+            # Check if directory is writable
+            if not os.access(output_dir, os.W_OK):
+                self.logger.error(f"Output directory not writable: {output_dir}")
+                raise PermissionError(f"Cannot write to directory: {output_dir}")
+            
+            try:
+                with open(output_path, 'w') as f:
+                    f.write(report_content)
+                self.logger.info(f"Report saved to: {output_path}")
+            except Exception as e:
+                self.logger.error(f"Error writing report file: {e}")
+                raise
         
         return report_content
     
@@ -419,7 +469,7 @@ class ComplianceEvidenceScraper:
         report_lines = [
             "# Cloud Compliance Evidence Report",
             "",
-            f"**Generated:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}",
+            f"**Generated:** {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
             f"**AWS Region:** {self.region}",
             f"**Controls Checked:** {len(self.evidence_collected)}",
             "",

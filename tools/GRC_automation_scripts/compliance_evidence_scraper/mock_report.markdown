@@ -1,6 +1,6 @@
 # Cloud Compliance Evidence Report (Mock Data)
 
-**Generated:** 2025-07-20 23:27:43 UTC
+**Generated:** 2025-07-20 23:39:06 UTC
 **AWS Region:** us-east-1
 **Controls Checked:** 3
 **Note:** This is mock data for demonstration purposes
@@ -23,7 +23,7 @@
 
 **Framework:** SOC 2
 **Type:** iam
-**Timestamp:** 2025-07-20T23:27:43.100304
+**Timestamp:** 2025-07-20T23:39:06.947932+00:00
 
 **Status:** ✅ Mock Data Generated
 
@@ -40,7 +40,7 @@
 
 **Framework:** SOC 2
 **Type:** iam
-**Timestamp:** 2025-07-20T23:27:43.100355
+**Timestamp:** 2025-07-20T23:39:06.947973+00:00
 
 **Status:** ✅ Mock Data Generated
 
@@ -57,7 +57,7 @@
 
 **Framework:** ISO 27001
 **Type:** cloudtrail
-**Timestamp:** 2025-07-20T23:27:43.100363
+**Timestamp:** 2025-07-20T23:39:06.947980+00:00
 
 **Status:** ✅ Mock Data Generated
 
