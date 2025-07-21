@@ -1,0 +1,149 @@
+# Guardian Enhanced Cloud Risk Prioritization Engine Requirements
+# 
+# This requirements file includes all dependencies for Guardian's Mandate
+# evidence integrity features including cryptographic libraries for
+# tamper-evident logging, digital signatures, and forensic capabilities.
+
+# Core web framework and API
+Flask>=2.3.0,<3.0.0
+Flask-SQLAlchemy>=3.0.0,<4.0.0
+Flask-CORS>=4.0.0,<5.0.0
+
+# Database with enhanced JSON support
+SQLAlchemy>=2.0.0,<3.0.0
+psycopg2-binary>=2.9.0,<3.0.0  # PostgreSQL adapter with JSONB support
+alembic>=1.12.0,<2.0.0          # Database migrations
+
+# Cryptographic libraries for Guardian's evidence integrity
+cryptography>=41.0.0,<42.0.0    # Core cryptographic operations
+pycryptodome>=3.18.0,<4.0.0     # Additional cryptographic algorithms
+PyNaCl>=1.5.0,<2.0.0            # High-level cryptographic library
+
+# Digital signatures and certificates
+cryptography-vectors>=41.0.0,<42.0.0  # Cryptographic test vectors
+pyOpenSSL>=23.2.0,<24.0.0       # OpenSSL wrapper for certificates
+certifi>=2023.7.22              # CA certificate bundle
+
+# Trusted timestamping (RFC 3161)
+rfc3161ng>=2.1.3,<3.0.0         # RFC 3161 timestamp verification
+asn1crypto>=1.5.1,<2.0.0        # ASN.1 parsing for timestamps
+
+# Blockchain and distributed ledger support
+py-ecc>=6.0.0,<7.0.0            # Elliptic curve cryptography
+eth-hash>=0.5.0,<1.0.0          # Ethereum-compatible hashing
+merkle-tools>=1.0.3,<2.0.0      # Merkle tree construction
+
+# Data processing and analysis
+pandas>=1.5.0,<3.0.0
+numpy>=1.21.0,<2.0.0
+
+# Configuration and environment
+python-dotenv>=1.0.0,<2.0.0
+
+# Date and time handling with timezone support
+python-dateutil>=2.8.0,<3.0.0
+pytz>=2023.3                    # Timezone handling for audit logs
+
+# JSON handling and validation with security
+marshmallow>=3.19.0,<4.0.0
+marshmallow-sqlalchemy>=0.29.0,<1.0.0
+jsonschema>=4.17.0,<5.0.0       # JSON schema validation
+
+# Enhanced logging and monitoring
+structlog>=23.1.0,<24.0.0       # Structured logging
+python-json-logger>=2.0.7,<3.0.0  # JSON formatted logs
+colorlog>=6.7.0,<7.0.0          # Colored console logs
+
+# Security scanning and validation
+bandit>=1.7.0,<2.0.0            # Security linting
+safety>=2.3.0,<3.0.0            # Dependency vulnerability scanning
+semgrep>=1.45.0,<2.0.0          # Static analysis security scanner
+
+# Development and testing
+pytest>=7.4.0,<8.0.0
+pytest-flask>=1.2.0,<2.0.0
+pytest-cov>=4.0.0,<5.0.0
+pytest-mock>=3.11.0,<4.0.0      # Mocking for tests
+pytest-asyncio>=0.21.0,<1.0.0   # Async testing support
+
+# Code quality and formatting
+black>=22.0.0,<24.0.0
+flake8>=5.0.0,<7.0.0
+isort>=5.12.0,<6.0.0            # Import sorting
+mypy>=1.5.0,<2.0.0              # Type checking
+
+# API documentation and validation
+flask-restx>=1.1.0,<2.0.0
+apispec>=6.3.0,<7.0.0           # OpenAPI specification
+marshmallow-apispec>=0.18.0,<1.0.0  # API spec generation
+
+# Performance and monitoring
+Werkzeug>=2.3.0,<3.0.0          # WSGI utility library
+gunicorn>=21.2.0,<22.0.0        # Production WSGI server
+psutil>=5.9.0,<6.0.0            # System monitoring
+
+# File handling and compression
+zipfile36>=0.1.3,<1.0.0         # Enhanced ZIP handling
+tarfile-stream>=0.1.3,<1.0.0    # Streaming TAR operations
+
+# Network and HTTP utilities
+requests>=2.31.0,<3.0.0         # HTTP requests
+urllib3>=2.0.0,<3.0.0           # HTTP library
+httpx>=0.24.0,<1.0.0            # Async HTTP client
+
+# Memory and caching
+cachetools>=5.3.0,<6.0.0        # Caching utilities
+python-memcached>=1.59,<2.0.0   # Memcached client (optional)
+
+# UUID and identifier generation
+uuid6>=2023.5.2,<2024.0.0       # Enhanced UUID support
+shortuuid>=1.0.11,<2.0.0        # Short UUID generation
+
+# Data serialization and compression
+msgpack>=1.0.5,<2.0.0           # MessagePack serialization
+lz4>=4.3.0,<5.0.0               # Fast compression
+zstandard>=0.21.0,<1.0.0        # Zstandard compression
+
+# Forensic and compliance utilities
+python-magic>=0.4.27,<1.0.0     # File type detection
+hashlib-compat>=1.0.1,<2.0.0    # Extended hash algorithms
+python-whois>=0.8.0,<1.0.0      # WHOIS lookups for investigations
+
+# Configuration management
+pydantic>=2.4.0,<3.0.0          # Data validation and settings
+dynaconf>=3.2.0,<4.0.0          # Configuration management
+
+# Development utilities
+watchdog>=3.0.0,<4.0.0          # File system monitoring
+click>=8.1.0,<9.0.0             # Command line interface
+rich>=13.5.0,<14.0.0            # Rich text and formatting
+
+# Production deployment
+supervisor>=4.2.5,<5.0.0        # Process management
+setproctitle>=1.3.2,<2.0.0      # Process title setting
+
+# Optional: Blockchain integration (uncomment if needed)
+# web3>=6.11.0,<7.0.0           # Ethereum Web3 interface
+# py-solc-x>=1.12.0,<2.0.0      # Solidity compiler
+# eth-account>=0.9.0,<1.0.0     # Ethereum account management
+
+# Optional: Hardware Security Module (HSM) support
+# PyKCS11>=1.5.12,<2.0.0        # PKCS#11 interface
+# python-pkcs11>=0.7.0,<1.0.0   # PKCS#11 high-level interface
+
+# Optional: Advanced cryptographic protocols
+# pycryptodome[speedups]>=3.18.0 # Performance optimizations
+# cryptg>=0.4.0,<1.0.0          # Fast cryptographic operations
+
+# Database drivers (choose based on deployment)
+# sqlite3 is included in Python standard library
+# For PostgreSQL with advanced features:
+# asyncpg>=0.28.0,<1.0.0        # Async PostgreSQL driver
+
+# Production logging and monitoring
+# sentry-sdk[flask]>=1.32.0,<2.0.0  # Error tracking
+# prometheus-flask-exporter>=0.22.0,<1.0.0  # Metrics export
+
+# Compliance and audit frameworks
+# openscap-python>=1.3.0,<2.0.0 # Security compliance scanning
+# nist-cybersecurity-framework>=1.0.0,<2.0.0  # NIST framework support
