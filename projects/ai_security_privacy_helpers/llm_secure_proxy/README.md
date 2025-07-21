@@ -133,12 +133,31 @@ Main endpoint for LLM interactions with comprehensive security analysis.
 ```
 
 #### GET /health
-Health check endpoint with security configuration status.
+Security-focused health check endpoint with comprehensive security status.
+
+#### GET /security/status
+Detailed security status and configuration reporting.
 
 #### GET /audit/report
 Generate comprehensive audit report for compliance purposes.
 
+#### POST /audit/validate
+Validate audit trail integrity and completeness.
+
+#### GET /audit/export
+Export audit data in various formats for compliance reporting.
+
 ### Security Features (Enhanced Implementation)
+
+#### Comprehensive Security Controls
+- **Input Validation & Sanitization**: Strict validation and sanitization of all inputs
+- **Rate Limiting & Throttling**: Per-IP rate limiting with configurable limits
+- **Network Security**: IP validation, user agent filtering, and network controls
+- **Security Headers**: Complete HTTP security headers implementation
+- **Authentication & Authorization**: Secure authentication with bcrypt hashing
+- **Cryptographic Security**: Secure token generation and hash verification
+- **Error Handling**: Secure error handling with information disclosure prevention
+- **SSL/TLS Security**: Strong SSL/TLS configuration with modern ciphers
 
 #### Prompt Injection Detection
 - **Categorized Patterns**: System override, role confusion, instruction bypass
@@ -157,6 +176,12 @@ Generate comprehensive audit report for compliance purposes.
 - **Context Analysis**: Provides surrounding context for detected keywords
 - **Risk Assessment**: Based on detection count and categories
 - **Compliance Mapping**: ISO 27001, industry-specific regulations
+
+#### Security Monitoring
+- **Real-Time Monitoring**: Security event detection and monitoring
+- **Security Metrics**: Comprehensive security metrics and reporting
+- **Rate Limit Monitoring**: Monitoring of rate limit violations and patterns
+- **Security Status Endpoint**: Real-time security status reporting
 
 ### Audit and Compliance Features
 

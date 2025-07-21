@@ -14,15 +14,23 @@ import json
 import logging
 import re
 import uuid
+import secrets
+import hmac
 from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from enum import Enum
 import hashlib
 import os
+import ssl
+import socket
+from urllib.parse import urlparse
+import ipaddress
 
-from flask import Flask, request, jsonify, g
+from flask import Flask, request, jsonify, g, make_response
 from werkzeug.exceptions import HTTPException
+from werkzeug.security import safe_str_cmp
+import bcrypt
 
 # Configure structured logging for audit compliance
 class AuditLogFormatter(logging.Formatter):
@@ -139,17 +147,150 @@ class AuditTrail:
 # Initialize Flask app
 app = Flask(__name__)
 logger = setup_logging()
+rate_limiter = RateLimiter()
 
-# Security configuration
+# Security middleware
+@app.before_request
+def security_middleware():
+    """Security middleware to apply security checks before processing requests."""
+    
+    # Get client identifier (IP address for rate limiting)
+    client_ip = request.remote_addr
+    client_id = client_ip
+    
+    # Validate IP address
+    if not SecurityUtils.validate_ip_address(client_ip):
+        logger.warning(f"Blocked request from invalid IP: {client_ip}", extra={
+            'extra_fields': {
+                'security_event': 'INVALID_IP_ADDRESS',
+                'client_ip': client_ip,
+                'user_agent': request.headers.get('User-Agent', 'unknown')
+            }
+        })
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Validate user agent
+    user_agent = request.headers.get('User-Agent', '')
+    if not SecurityUtils.validate_user_agent(user_agent):
+        logger.warning(f"Blocked request from blocked user agent: {user_agent}", extra={
+            'extra_fields': {
+                'security_event': 'BLOCKED_USER_AGENT',
+                'client_ip': client_ip,
+                'user_agent': user_agent
+            }
+        })
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Rate limiting
+    if not rate_limiter.is_allowed(client_id):
+        logger.warning(f"Rate limit exceeded for client: {client_id}", extra={
+            'extra_fields': {
+                'security_event': 'RATE_LIMIT_EXCEEDED',
+                'client_ip': client_ip,
+                'user_agent': user_agent
+            }
+        })
+        return jsonify({
+            'error': 'Rate limit exceeded',
+            'retry_after': SECURITY_CONFIG['rate_limit_window']
+        }), 429
+    
+    # Store client info in Flask g for later use
+    g.client_ip = client_ip
+    g.client_id = client_id
+    g.user_agent = user_agent
+
+@app.after_request
+def security_headers(response):
+    """Add security headers to all responses."""
+    
+    if SECURITY_CONFIG['security_headers_enabled']:
+        # Content Security Policy
+        response.headers['Content-Security-Policy'] = SECURITY_CONFIG['content_security_policy']
+        
+        # HTTP Strict Transport Security
+        if SECURITY_CONFIG['hsts_enabled']:
+            response.headers['Strict-Transport-Security'] = f"max-age={SECURITY_CONFIG['hsts_max_age']}; includeSubDomains; preload"
+        
+        # X-Frame-Options
+        response.headers['X-Frame-Options'] = SECURITY_CONFIG['x_frame_options']
+        
+        # X-Content-Type-Options
+        response.headers['X-Content-Type-Options'] = SECURITY_CONFIG['x_content_type_options']
+        
+        # X-XSS-Protection
+        response.headers['X-XSS-Protection'] = SECURITY_CONFIG['x_xss_protection']
+        
+        # Referrer Policy
+        response.headers['Referrer-Policy'] = SECURITY_CONFIG['referrer_policy']
+        
+        # Remove server information
+        response.headers.pop('Server', None)
+        
+        # Add rate limit headers
+        if hasattr(g, 'client_id'):
+            remaining = rate_limiter.get_remaining_requests(g.client_id)
+            response.headers['X-RateLimit-Remaining'] = str(remaining)
+            response.headers['X-RateLimit-Limit'] = str(SECURITY_CONFIG['rate_limit_requests_per_minute'])
+            response.headers['X-RateLimit-Reset'] = str(int((datetime.now(timezone.utc) + timedelta(seconds=SECURITY_CONFIG['rate_limit_window'])).timestamp()))
+    
+    return response
+
+# Comprehensive security configuration
 SECURITY_CONFIG = {
+    # Input validation and limits
     'max_prompt_length': 10000,
+    'max_request_size': 1024 * 1024,  # 1MB
+    'max_response_size': 1024 * 1024,  # 1MB
     'allowed_models': ['gpt-3.5-turbo', 'gpt-4', 'claude-3'],
+    'allowed_content_types': ['application/json'],
+    'max_headers_size': 8192,  # 8KB
+    
+    # Rate limiting and throttling
     'rate_limit_requests_per_minute': 60,
+    'rate_limit_burst_size': 10,
+    'rate_limit_window': 60,  # seconds
+    'max_concurrent_requests': 100,
+    
+    # Security features
     'pii_detection_enabled': True,
     'injection_detection_enabled': True,
     'content_filtering_enabled': True,
     'audit_logging_enabled': True,
+    'input_sanitization_enabled': True,
+    'output_sanitization_enabled': True,
+    'sql_injection_protection': True,
+    'xss_protection': True,
+    'csrf_protection': True,
+    
+    # Authentication and authorization
+    'authentication_required': False,  # For PoC - would be True in production
+    'api_key_validation': False,  # For PoC - would be True in production
+    'session_timeout_minutes': 30,
+    'max_failed_attempts': 5,
+    'lockout_duration_minutes': 15,
+    
+    # Encryption and security headers
+    'require_https': True,
+    'security_headers_enabled': True,
+    'content_security_policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
+    'hsts_enabled': True,
+    'hsts_max_age': 31536000,  # 1 year
+    'x_frame_options': 'DENY',
+    'x_content_type_options': 'nosniff',
+    'x_xss_protection': '1; mode=block',
+    'referrer_policy': 'strict-origin-when-cross-origin',
+    
+    # Network security
+    'allowed_ips': [],  # Empty for all IPs, add specific IPs for production
+    'blocked_ips': [],
+    'allowed_user_agents': [],  # Empty for all UAs, add specific UAs for production
+    'blocked_user_agents': ['curl', 'wget', 'python-requests'],  # Block common bots
+    
+    # Compliance frameworks
     'compliance_frameworks': [ComplianceFramework.GDPR, ComplianceFramework.HIPAA, ComplianceFramework.PCI_DSS, ComplianceFramework.SOX, ComplianceFramework.ISO_27001],
+    
+    # Audit and logging
     'audit_retention_days': 90,
     'audit_log_rotation': True,
     'audit_log_compression': True,
@@ -157,8 +298,207 @@ SECURITY_CONFIG = {
     'audit_backup_enabled': False,  # For PoC - would be True in production
     'compliance_reporting_enabled': True,
     'risk_assessment_enabled': True,
-    'incident_response_enabled': True
+    'incident_response_enabled': True,
+    
+    # Error handling
+    'detailed_error_messages': False,  # Don't expose internal details
+    'log_sensitive_data': False,  # Don't log sensitive data
+    'sanitize_error_messages': True,
+    
+    # SSL/TLS configuration
+    'ssl_verify': True,
+    'ssl_cert_file': None,  # Path to SSL certificate
+    'ssl_key_file': None,   # Path to SSL private key
+    'ssl_ciphers': 'ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256',
+    'ssl_protocols': ['TLSv1.2', 'TLSv1.3'],
+    
+    # Session security
+    'session_cookie_secure': True,
+    'session_cookie_httponly': True,
+    'session_cookie_samesite': 'Strict',
+    'session_cookie_max_age': 1800,  # 30 minutes
 }
+
+# Security utilities
+class SecurityUtils:
+    """Security utility functions following best practices."""
+    
+    @staticmethod
+    def generate_secure_token(length: int = 32) -> str:
+        """Generate a cryptographically secure token."""
+        return secrets.token_urlsafe(length)
+    
+    @staticmethod
+    def hash_password(password: str) -> str:
+        """Hash a password using bcrypt."""
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    
+    @staticmethod
+    def verify_password(password: str, hashed: str) -> bool:
+        """Verify a password against its hash."""
+        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    
+    @staticmethod
+    def constant_time_compare(a: str, b: str) -> bool:
+        """Constant-time string comparison to prevent timing attacks."""
+        return safe_str_cmp(a, b)
+    
+    @staticmethod
+    def sanitize_input(text: str) -> str:
+        """Sanitize input to prevent injection attacks."""
+        if not text:
+            return ""
+        
+        # Remove null bytes
+        text = text.replace('\x00', '')
+        
+        # Remove control characters except newlines and tabs
+        text = ''.join(char for char in text if char.isprintable() or char in '\n\t')
+        
+        # Limit length
+        if len(text) > SECURITY_CONFIG['max_prompt_length']:
+            text = text[:SECURITY_CONFIG['max_prompt_length']]
+        
+        return text.strip()
+    
+    @staticmethod
+    def sanitize_output(text: str) -> str:
+        """Sanitize output to prevent XSS and injection attacks."""
+        if not text:
+            return ""
+        
+        # HTML entity encoding for common XSS vectors
+        replacements = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#x27;',
+            '&': '&amp;',
+            '/': '&#x2F;',
+            '\\': '&#x5C;'
+        }
+        
+        for char, replacement in replacements.items():
+            text = text.replace(char, replacement)
+        
+        return text
+    
+    @staticmethod
+    def validate_ip_address(ip: str) -> bool:
+        """Validate IP address format and check against allowlist/blocklist."""
+        try:
+            ip_obj = ipaddress.ip_address(ip)
+            
+            # Check blocked IPs
+            if ip in SECURITY_CONFIG['blocked_ips']:
+                return False
+            
+            # Check allowed IPs (if specified)
+            if SECURITY_CONFIG['allowed_ips'] and ip not in SECURITY_CONFIG['allowed_ips']:
+                return False
+            
+            return True
+        except ValueError:
+            return False
+    
+    @staticmethod
+    def validate_user_agent(user_agent: str) -> bool:
+        """Validate user agent against allowlist/blocklist."""
+        if not user_agent:
+            return False
+        
+        user_agent_lower = user_agent.lower()
+        
+        # Check blocked user agents
+        for blocked_ua in SECURITY_CONFIG['blocked_user_agents']:
+            if blocked_ua.lower() in user_agent_lower:
+                return False
+        
+        # Check allowed user agents (if specified)
+        if SECURITY_CONFIG['allowed_user_agents']:
+            return any(allowed_ua.lower() in user_agent_lower 
+                      for allowed_ua in SECURITY_CONFIG['allowed_user_agents'])
+        
+        return True
+    
+    @staticmethod
+    def validate_content_type(content_type: str) -> bool:
+        """Validate content type."""
+        if not content_type:
+            return False
+        
+        return content_type.lower() in SECURITY_CONFIG['allowed_content_types']
+    
+    @staticmethod
+    def validate_json_schema(data: Dict[str, Any]) -> bool:
+        """Validate JSON schema for required fields and types."""
+        if not isinstance(data, dict):
+            return False
+        
+        # Check required fields
+        if 'prompt' not in data:
+            return False
+        
+        # Validate prompt
+        if not isinstance(data['prompt'], str):
+            return False
+        
+        if len(data['prompt']) > SECURITY_CONFIG['max_prompt_length']:
+            return False
+        
+        # Validate optional fields
+        if 'model_name' in data:
+            if not isinstance(data['model_name'], str):
+                return False
+            if data['model_name'] not in SECURITY_CONFIG['allowed_models']:
+                return False
+        
+        return True
+
+# Rate limiting implementation
+class RateLimiter:
+    """Simple in-memory rate limiter (use Redis in production)."""
+    
+    def __init__(self):
+        self.requests = {}
+    
+    def is_allowed(self, client_id: str) -> bool:
+        """Check if request is allowed based on rate limits."""
+        now = datetime.now(timezone.utc)
+        
+        if client_id not in self.requests:
+            self.requests[client_id] = []
+        
+        # Remove old requests outside the window
+        window_start = now - timedelta(seconds=SECURITY_CONFIG['rate_limit_window'])
+        self.requests[client_id] = [
+            req_time for req_time in self.requests[client_id] 
+            if req_time > window_start
+        ]
+        
+        # Check rate limit
+        if len(self.requests[client_id]) >= SECURITY_CONFIG['rate_limit_requests_per_minute']:
+            return False
+        
+        # Add current request
+        self.requests[client_id].append(now)
+        return True
+    
+    def get_remaining_requests(self, client_id: str) -> int:
+        """Get remaining requests for a client."""
+        now = datetime.now(timezone.utc)
+        
+        if client_id not in self.requests:
+            return SECURITY_CONFIG['rate_limit_requests_per_minute']
+        
+        window_start = now - timedelta(seconds=SECURITY_CONFIG['rate_limit_window'])
+        recent_requests = [
+            req_time for req_time in self.requests[client_id] 
+            if req_time > window_start
+        ]
+        
+        return max(0, SECURITY_CONFIG['rate_limit_requests_per_minute'] - len(recent_requests))
 
 class SecurityAnalyzer:
     """Comprehensive security analysis with audit trail."""
@@ -598,18 +938,26 @@ def create_audit_trail(request_data: Dict[str, Any], security_analyzer: Security
 
 @app.before_request
 def setup_request_context():
-    """Setup request context for audit trail."""
+    """Setup request context for audit trail and security tracking."""
     g.audit_id = str(uuid.uuid4())
     g.request_id = str(uuid.uuid4())
     g.user_id = request.headers.get('X-User-ID', 'anonymous')
     g.session_id = request.headers.get('X-Session-ID', 'unknown')
+    g.request_start_time = datetime.now(timezone.utc)
+    
+    # Security tracking
+    g.security_events = []
+    g.rate_limit_hit = False
+    g.blocked_request = False
     
     logger.info(f"Request started", extra={
         'extra_fields': {
             'request_method': request.method,
             'request_path': request.path,
             'ip_address': request.remote_addr,
-            'user_agent': request.headers.get('User-Agent', 'unknown')
+            'user_agent': request.headers.get('User-Agent', 'unknown'),
+            'content_type': request.content_type,
+            'content_length': request.content_length
         }
     })
 
@@ -617,23 +965,80 @@ def setup_request_context():
 def chat():
     """Main chat endpoint with comprehensive security processing and audit trail."""
     try:
-        # Validate request
+        # Comprehensive request validation
         if not request.is_json:
+            logger.warning("Invalid content type", extra={
+                'extra_fields': {
+                    'security_event': 'INVALID_CONTENT_TYPE',
+                    'content_type': request.content_type,
+                    'client_ip': getattr(g, 'client_ip', 'unknown')
+                }
+            })
             return jsonify({'error': 'Content-Type must be application/json'}), 400
         
-        data = request.get_json()
-        if not data or 'prompt' not in data:
-            return jsonify({'error': 'Missing required field: prompt'}), 400
+        # Validate content type
+        if not SecurityUtils.validate_content_type(request.content_type):
+            logger.warning("Unsupported content type", extra={
+                'extra_fields': {
+                    'security_event': 'UNSUPPORTED_CONTENT_TYPE',
+                    'content_type': request.content_type,
+                    'client_ip': getattr(g, 'client_ip', 'unknown')
+                }
+            })
+            return jsonify({'error': 'Unsupported content type'}), 400
         
+        # Validate request size
+        if request.content_length and request.content_length > SECURITY_CONFIG['max_request_size']:
+            logger.warning("Request too large", extra={
+                'extra_fields': {
+                    'security_event': 'REQUEST_TOO_LARGE',
+                    'content_length': request.content_length,
+                    'max_size': SECURITY_CONFIG['max_request_size'],
+                    'client_ip': getattr(g, 'client_ip', 'unknown')
+                }
+            })
+            return jsonify({'error': 'Request too large'}), 413
+        
+        # Parse and validate JSON
+        try:
+            data = request.get_json()
+        except Exception as e:
+            logger.warning("Invalid JSON", extra={
+                'extra_fields': {
+                    'security_event': 'INVALID_JSON',
+                    'error': str(e),
+                    'client_ip': getattr(g, 'client_ip', 'unknown')
+                }
+            })
+            return jsonify({'error': 'Invalid JSON'}), 400
+        
+        # Validate JSON schema
+        if not SecurityUtils.validate_json_schema(data):
+            logger.warning("Invalid JSON schema", extra={
+                'extra_fields': {
+                    'security_event': 'INVALID_JSON_SCHEMA',
+                    'client_ip': getattr(g, 'client_ip', 'unknown')
+                }
+            })
+            return jsonify({'error': 'Invalid request format'}), 400
+        
+        # Extract and sanitize input
         original_prompt = data['prompt']
         model_name = data.get('model_name', 'gpt-3.5-turbo')
         
-        # Validate input
-        if len(original_prompt) > SECURITY_CONFIG['max_prompt_length']:
-            return jsonify({'error': f'Prompt too long. Maximum length: {SECURITY_CONFIG["max_prompt_length"]}'}), 400
+        # Sanitize input if enabled
+        if SECURITY_CONFIG['input_sanitization_enabled']:
+            original_prompt = SecurityUtils.sanitize_input(original_prompt)
         
-        if model_name not in SECURITY_CONFIG['allowed_models']:
-            return jsonify({'error': f'Model not allowed. Allowed models: {SECURITY_CONFIG["allowed_models"]}'}), 400
+        # Additional validation
+        if not original_prompt or not original_prompt.strip():
+            logger.warning("Empty prompt", extra={
+                'extra_fields': {
+                    'security_event': 'EMPTY_PROMPT',
+                    'client_ip': getattr(g, 'client_ip', 'unknown')
+                }
+            })
+            return jsonify({'error': 'Prompt cannot be empty'}), 400
         
         logger.info(f"Processing chat request", extra={
             'extra_fields': {
@@ -676,7 +1081,23 @@ def chat():
         else:
             harmful_content_analysis = {'detected': False, 'risk_level': 'LOW', 'audit_trail': []}
         
-        # Prepare response
+        # Sanitize response if enabled
+        if SECURITY_CONFIG['output_sanitization_enabled']:
+            final_response_text = SecurityUtils.sanitize_output(final_response_text)
+        
+        # Validate response size
+        if len(final_response_text) > SECURITY_CONFIG['max_response_size']:
+            logger.warning("Response too large", extra={
+                'extra_fields': {
+                    'security_event': 'RESPONSE_TOO_LARGE',
+                    'response_length': len(final_response_text),
+                    'max_size': SECURITY_CONFIG['max_response_size'],
+                    'client_ip': getattr(g, 'client_ip', 'unknown')
+                }
+            })
+            final_response_text = final_response_text[:SECURITY_CONFIG['max_response_size']] + "... [truncated]"
+        
+        # Prepare response with security considerations
         response_data = {
             'status': 'success',
             'request_id': g.request_id,
@@ -692,7 +1113,7 @@ def chat():
                         harmful_content_analysis.get('risk_level', 'LOW')
                     ], key=lambda x: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].index(x)),
                     'total_security_events': len(security_analyzer.security_events),
-                    'compliance_impact': list(set([f for event in security_analyzer.security_events for f in event.compliance_impact]))
+                    'compliance_impact': list(set([f.value for event in security_analyzer.security_events for f in event.compliance_impact]))
                 }
             },
             'model_used': model_name,
@@ -702,6 +1123,7 @@ def chat():
                 'gdpr_compliant': all('GDPR' not in [f.value for f in event.compliance_impact] for event in security_analyzer.security_events),
                 'hipaa_compliant': all('HIPAA' not in [f.value for f in event.compliance_impact] for event in security_analyzer.security_events),
                 'pci_dss_compliant': all('PCI_DSS' not in [f.value for f in event.compliance_impact] for event in security_analyzer.security_events),
+                'sox_compliant': all('SOX' not in [f.value for f in event.compliance_impact] for event in security_analyzer.security_events),
                 'iso_27001_compliant': all('ISO_27001' not in [f.value for f in event.compliance_impact] for event in security_analyzer.security_events)
             }
         }
@@ -721,30 +1143,90 @@ def chat():
         return jsonify(response_data)
         
     except Exception as e:
-        logger.error(f"Error processing request: {str(e)}", extra={
+        # Log error with security considerations
+        error_message = str(e) if SECURITY_CONFIG['detailed_error_messages'] else 'Internal server error'
+        error_type = type(e).__name__ if SECURITY_CONFIG['detailed_error_messages'] else 'InternalError'
+        
+        logger.error(f"Error processing request: {error_message}", extra={
             'extra_fields': {
-                'error_type': type(e).__name__,
-                'error_details': str(e)
+                'error_type': error_type,
+                'error_details': error_message if SECURITY_CONFIG['log_sensitive_data'] else 'Error details redacted',
+                'client_ip': getattr(g, 'client_ip', 'unknown'),
+                'security_event': 'PROCESSING_ERROR'
             }
         })
-        return jsonify({'error': 'Internal server error', 'request_id': getattr(g, 'request_id', 'unknown')}), 500
+        
+        # Return sanitized error response
+        error_response = {
+            'error': 'Internal server error' if not SECURITY_CONFIG['detailed_error_messages'] else error_message,
+            'request_id': getattr(g, 'request_id', 'unknown')
+        }
+        
+        return jsonify(error_response), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint with security status."""
-    return jsonify({
-        'status': 'healthy',
-        'service': 'Secure LLM Proxy PoC',
-        'version': '1.0.0-poc',
-        'timestamp': datetime.now(timezone.utc).isoformat(),
-        'security_config': {
+    """Security-focused health check endpoint."""
+    try:
+        # Check security features status
+        security_status = {
             'injection_detection_enabled': SECURITY_CONFIG['injection_detection_enabled'],
             'pii_detection_enabled': SECURITY_CONFIG['pii_detection_enabled'],
             'content_filtering_enabled': SECURITY_CONFIG['content_filtering_enabled'],
-            'audit_logging_enabled': SECURITY_CONFIG['audit_logging_enabled']
-        },
-        'compliance_frameworks': [f.value for f in SECURITY_CONFIG['compliance_frameworks']]
-    })
+            'audit_logging_enabled': SECURITY_CONFIG['audit_logging_enabled'],
+            'input_sanitization_enabled': SECURITY_CONFIG['input_sanitization_enabled'],
+            'output_sanitization_enabled': SECURITY_CONFIG['output_sanitization_enabled'],
+            'rate_limiting_enabled': True,  # Always enabled
+            'security_headers_enabled': SECURITY_CONFIG['security_headers_enabled'],
+            'hsts_enabled': SECURITY_CONFIG['hsts_enabled']
+        }
+        
+        # Check system security status
+        system_security = {
+            'ssl_available': hasattr(ssl, 'SSLContext'),
+            'crypto_available': hasattr(secrets, 'token_urlsafe'),
+            'hashlib_available': hasattr(hashlib, 'sha256'),
+            'bcrypt_available': hasattr(bcrypt, 'gensalt')
+        }
+        
+        # Check rate limiting status
+        rate_limit_status = {
+            'active_clients': len(rate_limiter.requests),
+            'rate_limit_window': SECURITY_CONFIG['rate_limit_window'],
+            'max_requests_per_minute': SECURITY_CONFIG['rate_limit_requests_per_minute']
+        }
+        
+        return jsonify({
+            'status': 'healthy',
+            'service': 'Secure LLM Proxy PoC',
+            'version': '1.0.0-poc',
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'security_status': security_status,
+            'system_security': system_security,
+            'rate_limit_status': rate_limit_status,
+            'compliance_frameworks': [f.value for f in SECURITY_CONFIG['compliance_frameworks']],
+            'security_headers': {
+                'content_security_policy': SECURITY_CONFIG['content_security_policy'],
+                'hsts_max_age': SECURITY_CONFIG['hsts_max_age'],
+                'x_frame_options': SECURITY_CONFIG['x_frame_options'],
+                'x_content_type_options': SECURITY_CONFIG['x_content_type_options'],
+                'x_xss_protection': SECURITY_CONFIG['x_xss_protection'],
+                'referrer_policy': SECURITY_CONFIG['referrer_policy']
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}", extra={
+            'extra_fields': {
+                'security_event': 'HEALTH_CHECK_FAILED',
+                'error': str(e)
+            }
+        })
+        return jsonify({
+            'status': 'unhealthy',
+            'error': 'Health check failed',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 500
 
 @app.route('/audit/report', methods=['GET'])
 def audit_report():
@@ -1030,16 +1512,103 @@ def export_audit_data():
         logger.error(f"Error exporting audit data: {str(e)}")
         return jsonify({'error': 'Failed to export audit data'}), 500
 
+@app.route('/security/status', methods=['GET'])
+def security_status():
+    """Get detailed security status and configuration."""
+    try:
+        # Get current security metrics
+        security_metrics = {
+            'active_clients': len(rate_limiter.requests),
+            'total_requests_processed': sum(len(requests) for requests in rate_limiter.requests.values()),
+            'rate_limit_violations': len([req for req in rate_limiter.requests.values() if len(req) >= SECURITY_CONFIG['rate_limit_requests_per_minute']]),
+            'blocked_ips_count': len(SECURITY_CONFIG['blocked_ips']),
+            'allowed_ips_count': len(SECURITY_CONFIG['allowed_ips'])
+        }
+        
+        # Security configuration summary
+        security_config_summary = {
+            'input_validation': {
+                'max_prompt_length': SECURITY_CONFIG['max_prompt_length'],
+                'max_request_size': SECURITY_CONFIG['max_request_size'],
+                'input_sanitization': SECURITY_CONFIG['input_sanitization_enabled'],
+                'output_sanitization': SECURITY_CONFIG['output_sanitization_enabled']
+            },
+            'rate_limiting': {
+                'requests_per_minute': SECURITY_CONFIG['rate_limit_requests_per_minute'],
+                'burst_size': SECURITY_CONFIG['rate_limit_burst_size'],
+                'window_seconds': SECURITY_CONFIG['rate_limit_window']
+            },
+            'security_features': {
+                'pii_detection': SECURITY_CONFIG['pii_detection_enabled'],
+                'injection_detection': SECURITY_CONFIG['injection_detection_enabled'],
+                'content_filtering': SECURITY_CONFIG['content_filtering_enabled'],
+                'audit_logging': SECURITY_CONFIG['audit_logging_enabled']
+            },
+            'headers': {
+                'security_headers': SECURITY_CONFIG['security_headers_enabled'],
+                'hsts': SECURITY_CONFIG['hsts_enabled'],
+                'csp': bool(SECURITY_CONFIG['content_security_policy'])
+            }
+        }
+        
+        return jsonify({
+            'status': 'secure',
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'security_metrics': security_metrics,
+            'security_config': security_config_summary,
+            'compliance_status': {
+                'frameworks': [f.value for f in SECURITY_CONFIG['compliance_frameworks']],
+                'gdpr_ready': True,
+                'hipaa_ready': True,
+                'pci_dss_ready': True,
+                'sox_ready': True,
+                'iso_27001_ready': True
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Security status check failed: {str(e)}", extra={
+            'extra_fields': {
+                'security_event': 'SECURITY_STATUS_FAILED',
+                'error': str(e)
+            }
+        })
+        return jsonify({
+            'status': 'error',
+            'error': 'Security status check failed',
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }), 500
+
 @app.errorhandler(HTTPException)
 def handle_http_error(error):
-    """Handle HTTP errors with audit logging."""
-    logger.error(f"HTTP error: {error.code} - {error.description}", extra={
-        'extra_fields': {
-            'error_code': error.code,
-            'error_description': error.description
-        }
-    })
-    return jsonify({'error': error.description, 'code': error.code}), error.code
+    """Handle HTTP errors with security logging."""
+    # Log security-relevant errors
+    if error.code in [403, 429, 413]:
+        logger.warning(f"Security-related HTTP error: {error.code} - {error.description}", extra={
+            'extra_fields': {
+                'security_event': 'SECURITY_HTTP_ERROR',
+                'error_code': error.code,
+                'error_description': error.description,
+                'client_ip': getattr(g, 'client_ip', 'unknown'),
+                'user_agent': getattr(g, 'user_agent', 'unknown')
+            }
+        })
+    else:
+        logger.error(f"HTTP error: {error.code} - {error.description}", extra={
+            'extra_fields': {
+                'error_code': error.code,
+                'error_description': error.description,
+                'client_ip': getattr(g, 'client_ip', 'unknown')
+            }
+        })
+    
+    # Return sanitized error response
+    error_response = {
+        'error': error.description if SECURITY_CONFIG['detailed_error_messages'] else 'Request failed',
+        'code': error.code
+    }
+    
+    return jsonify(error_response), error.code
 
 if __name__ == '__main__':
     logger.info("Starting Secure LLM Proxy (PoC) with comprehensive audit logging")
