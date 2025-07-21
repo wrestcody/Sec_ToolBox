@@ -22,7 +22,7 @@ import sys
 import os
 
 # Add parent directory to path for Guardian's Mandate integration
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 try:
     from guardians_mandate_integration import GuardianTool, EvidenceLevel, AuditEventType
     GUARDIAN_MANDATE_AVAILABLE = True
@@ -129,7 +129,7 @@ class PasswordAnalyzer(GuardianTool if GUARDIAN_MANDATE_AVAILABLE else object):
     def calculate_entropy(self, password: str) -> float:
         """Calculate password entropy (bits of randomness)."""
         char_set_size = 0
-        
+
         if re.search(r'[a-z]', password):
             char_set_size += 26
         if re.search(r'[A-Z]', password):
@@ -138,11 +138,13 @@ class PasswordAnalyzer(GuardianTool if GUARDIAN_MANDATE_AVAILABLE else object):
             char_set_size += 10
         if re.search(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]', password):
             char_set_size += 32
-        
+
         if char_set_size == 0:
             return 0
-        
-        return len(password) * (char_set_size ** 0.5).bit_length()
+
+        # Calculate entropy using log2
+        import math
+        return len(password) * math.log2(char_set_size)
     
     def estimate_crack_time(self, entropy: float) -> Dict:
         """Estimate time to crack password with different attack methods."""

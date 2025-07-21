@@ -23,7 +23,7 @@ import sys
 import os
 
 # Add parent directory to path for Guardian's Mandate integration
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 try:
     from guardians_mandate_integration import GuardianTool, EvidenceLevel, AuditEventType
     GUARDIAN_MANDATE_AVAILABLE = True
