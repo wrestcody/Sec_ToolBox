@@ -46,14 +46,19 @@ class NetworkScanner(GuardianTool if GUARDIAN_MANDATE_AVAILABLE else object):
     
     def __init__(self, enable_guardian_mandate: bool = True):
         """Initialize the network scanner."""
-        if GUARDIAN_MANDATE_AVAILABLE and enable_guardian_mandate:
-            super().__init__(
-                tool_name="NetworkScanner",
-                tool_version="1.0.0",
-                evidence_level=EvidenceLevel.MEDIUM
-            )
-        
         self.enable_guardian_mandate = enable_guardian_mandate and GUARDIAN_MANDATE_AVAILABLE
+        
+        # Initialize Guardian's Mandate if available
+        if self.enable_guardian_mandate and GUARDIAN_MANDATE_AVAILABLE:
+            try:
+                super().__init__(
+                    tool_name="NetworkScanner",
+                    tool_version="1.0.0",
+                    evidence_level=EvidenceLevel.MEDIUM
+                )
+            except Exception as e:
+                print(f"Warning: Guardian's Mandate initialization failed: {e}")
+                self.enable_guardian_mandate = False
         self.scan_results = []
         self.common_ports = {
             21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", 53: "DNS",

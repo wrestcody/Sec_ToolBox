@@ -92,14 +92,20 @@ class SupplyChainSecurityAnalyzer(GuardianTool if GUARDIAN_MANDATE_AVAILABLE els
     
     def __init__(self, enable_guardian_mandate: bool = True):
         """Initialize the supply chain security analyzer."""
-        if GUARDIAN_MANDATE_AVAILABLE and enable_guardian_mandate:
-            super().__init__(
-                tool_name="SupplyChainSecurityAnalyzer",
-                tool_version="1.0.0",
-                evidence_level=EvidenceLevel.HIGH
-            )
-        
         self.enable_guardian_mandate = enable_guardian_mandate and GUARDIAN_MANDATE_AVAILABLE
+        
+        # Initialize Guardian's Mandate if available
+        if self.enable_guardian_mandate and GUARDIAN_MANDATE_AVAILABLE:
+            try:
+                super().__init__(
+                    tool_name="SupplyChainSecurityAnalyzer",
+                    tool_version="1.0.0",
+                    evidence_level=EvidenceLevel.HIGH
+                )
+            except Exception as e:
+                print(f"Warning: Guardian's Mandate initialization failed: {e}")
+                self.enable_guardian_mandate = False
+        
         self.dependencies = []
         self.vendors = []
         self.supply_chain_risks = []
