@@ -40,7 +40,7 @@ except ImportError:
     GUARDIAN_INTEGRATION_AVAILABLE = False
 
 
-class GuardianForgeAutomation:
+class GuardiansArmoryAutomation:
     """
     Automation system for ensuring all tools implement The Guardian's Mandate.
     """
@@ -70,7 +70,7 @@ class GuardianForgeAutomation:
                 logging.FileHandler("guardian_forge_automation.log")
             ]
         )
-        self.logger = logging.getLogger("GuardianForgeAutomation")
+        self.logger = logging.getLogger("GuardiansArmoryAutomation")
     
     def scan_for_tools(self) -> List[Path]:
         """
@@ -421,13 +421,13 @@ from pathlib import Path
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from guardian_forge_automation import GuardianForgeAutomation
+from guardians_armory_automation import GuardiansArmoryAutomation
 
 def main():
     """Main monitoring function."""
-    automation = GuardianForgeAutomation()
+    automation = GuardiansArmoryAutomation()
     
-    print("🛡️  Guardian's Forge Continuous Monitoring Started")
+    print("🛡️  Guardians Armory Continuous Monitoring Started")
     print("=" * 50)
     
     while True:
@@ -551,7 +551,7 @@ echo "✅ Guardian's Forge deployed successfully!"
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Guardian's Forge Automation System",
+        description="Guardians Armory Automation System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -616,7 +616,7 @@ Examples:
     args = parser.parse_args()
     
     # Initialize automation system
-    automation = GuardianForgeAutomation(args.repo_path)
+    automation = GuardiansArmoryAutomation(args.repo_path)
     
     try:
         if args.compliance_check:
@@ -671,7 +671,7 @@ Examples:
         
         else:
             # Default: run comprehensive check and report
-            print("🛡️  Guardian's Forge Automation System")
+            print("🛡️  Guardians Armory Automation System")
             print("=" * 50)
             
             print("\n1. Running compliance check...")
@@ -690,7 +690,7 @@ Examples:
             report_path = automation.generate_compliance_report()
             print(f"   Report: {report_path}")
             
-            print("\n✅ Guardian's Forge automation completed!")
+            print("\n✅ Guardians Armory automation completed!")
     
     except Exception as e:
         print(f"❌ Automation failed: {e}")

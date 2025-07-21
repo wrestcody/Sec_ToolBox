@@ -85,7 +85,7 @@ def test_iam_anomaly_detector():
     
     try:
         # Import the IAM Anomaly Detector
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'cloud_configuration_auditors', 'iam_anomaly_detector'))
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'guardians_armory', 'iam_anomaly_detector'))
         from iam_anomaly_detector import IAMAnomalyDetector
         print("✅ IAM Anomaly Detector imported successfully")
     except ImportError as e:
@@ -176,7 +176,7 @@ def test_network_security_scanner():
     
     try:
         # Import the Network Security Scanner
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'network_security_scanner'))
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'network_armory'))
         from network_security_scanner import NetworkSecurityScanner
         print("✅ Network Security Scanner imported successfully")
     except ImportError as e:
@@ -238,7 +238,7 @@ def test_file_integrity_monitor():
     
     try:
         # Import the File Integrity Monitor
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'file_integrity_monitor'))
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'file_armory'))
         from file_integrity_monitor import FileIntegrityMonitor
         print("✅ File Integrity Monitor imported successfully")
     except ImportError as e:
@@ -420,7 +420,7 @@ def test_comprehensive_workflow():
         try:
             # Step 1: File Integrity Monitoring
             print("   Step 1: Setting up file integrity monitoring...")
-            sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'file_integrity_monitor'))
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'file_armory'))
             from file_integrity_monitor import FileIntegrityMonitor
             
             monitor = FileIntegrityMonitor(enable_guardian_mandate=True)
@@ -428,7 +428,7 @@ def test_comprehensive_workflow():
             
             # Step 2: Network Security Scanning
             print("   Step 2: Running network security scan...")
-            sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'network_security_scanner'))
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'network_armory'))
             from network_security_scanner import NetworkSecurityScanner
             
             scanner = NetworkSecurityScanner(enable_guardian_mandate=True)
@@ -436,7 +436,7 @@ def test_comprehensive_workflow():
             
             # Step 3: IAM Anomaly Detection
             print("   Step 3: Running IAM anomaly detection...")
-            sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'cloud_configuration_auditors', 'iam_anomaly_detector'))
+            sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'guardians_armory', 'iam_anomaly_detector'))
             from iam_anomaly_detector import IAMAnomalyDetector
             
             # Create test CloudTrail logs
@@ -511,7 +511,7 @@ def test_comprehensive_workflow():
 
 def main():
     """Main test function."""
-    print("🧪 The Guardian's Forge - Comprehensive Test Suite")
+    print("🧪 Guardians Armory - Comprehensive Test Suite")
     print("=" * 60)
     print("Testing all tools with Guardian's Mandate integration")
     print("=" * 60)

@@ -1,8 +1,10 @@
-# The Guardian's Forge: Unassailable Digital Evidence Integrity
+# Guardians Armory: Unassailable Digital Evidence Integrity
 
 ## Overview
 
-The Guardian's Forge is a comprehensive security tooling framework that implements **The Guardian's Mandate** - a foundational principle for building systems with unassailable digital evidence integrity and unbreakable chain of custody. This framework ensures that all security tools, audit trails, and forensic evidence meet the most stringent compliance and legal requirements.
+Guardians Armory is a comprehensive security tooling framework that implements **The Guardian's Mandate** - a foundational principle for building systems with unassailable digital evidence integrity and unbreakable chain of custody. This framework ensures that all security tools, audit trails, and forensic evidence meet the most stringent compliance and legal requirements.
+
+**"To Create the Next Generation of Protectors"**
 
 ## 🛡️ The Guardian's Mandate
 
@@ -92,11 +94,11 @@ export_path = ledger.export_forensic_data("forensic_export.json")
 
 ```bash
 # Run with Guardian's Mandate enabled (default)
-python tools/cloud_configuration_auditors/iam_anomaly_detector/iam_anomaly_detector.py \
+python tools/guardians_armory/iam_anomaly_detector/iam_anomaly_detector.py \
     --log-file mock_cloudtrail_logs.json
 
 # Run with Guardian's Mandate disabled
-python tools/cloud_configuration_auditors/iam_anomaly_detector/iam_anomaly_detector.py \
+python tools/guardians_armory/iam_anomaly_detector/iam_anomaly_detector.py \
     --log-file mock_cloudtrail_logs.json --disable-guardian-mandate
 
 # Export forensic data

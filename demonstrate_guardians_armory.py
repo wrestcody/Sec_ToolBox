@@ -16,23 +16,23 @@ from datetime import datetime
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-def demonstrate_guardian_forge():
-    """Demonstrate The Guardian's Forge in action."""
+def demonstrate_guardians_armory():
+    """Demonstrate Guardians Armory in action."""
     
-    print("🛡️  The Guardian's Forge - Live Demonstration")
+    print("🛡️  Guardians Armory - Live Demonstration")
     print("=" * 60)
     print("Demonstrating unassailable digital evidence integrity")
     print("and unbreakable chain of custody at scale")
     print("=" * 60)
     
     # Step 1: Show the automation system
-    print("\n1️⃣  Guardian's Forge Automation System")
+    print("\n1️⃣  Guardians Armory Automation System")
     print("-" * 40)
     
     try:
-        from guardian_forge_automation import GuardianForgeAutomation
+        from guardians_armory_automation import GuardiansArmoryAutomation
         
-        automation = GuardianForgeAutomation()
+        automation = GuardiansArmoryAutomation()
         
         # Run compliance check
         compliance = automation.run_compliance_check()
@@ -76,11 +76,11 @@ def demonstrate_guardian_forge():
         print(f"❌ Tool creation error: {e}")
     
     # Step 3: Demonstrate file integrity monitoring
-    print("\n3️⃣  File Integrity Monitor with Guardian's Mandate")
+    print("\n3️⃣  File Armory Monitor with Guardian's Mandate")
     print("-" * 45)
     
     try:
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'file_integrity_monitor'))
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'file_armory'))
         from file_integrity_monitor import FileIntegrityMonitor
         
         # Create test directory
@@ -125,11 +125,11 @@ def demonstrate_guardian_forge():
         print(f"❌ File integrity monitor error: {e}")
     
     # Step 4: Demonstrate network security scanning
-    print("\n4️⃣  Network Security Scanner with Guardian's Mandate")
+    print("\n4️⃣  Network Armory Scanner with Guardian's Mandate")
     print("-" * 45)
     
     try:
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'network_security_scanner'))
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'tools', 'network_armory'))
         from network_security_scanner import NetworkSecurityScanner
         
         # Initialize scanner
@@ -164,12 +164,12 @@ def demonstrate_guardian_forge():
         if 'monitor' in locals():
             export_path = monitor.export_forensic_data()
             if export_path:
-                forensic_exports.append(("File Integrity Monitor", export_path))
+                forensic_exports.append(("File Armory Monitor", export_path))
         
         if 'scanner' in locals():
             export_path = scanner.export_forensic_data()
             if export_path:
-                forensic_exports.append(("Network Security Scanner", export_path))
+                forensic_exports.append(("Network Armory Scanner", export_path))
         
         if forensic_exports:
             print("✅ Forensic data exported with cryptographic proofs:")
@@ -227,7 +227,7 @@ def demonstrate_guardian_forge():
     print("   📊 Comprehensive forensic export")
     print("   ⚖️  Legal evidentiary standards compliance")
     
-    print("\n🚀 The Guardian's Forge is ready for production deployment!")
+    print("\n🚀 Guardians Armory is ready for production deployment!")
     print("   Every tool automatically implements The Guardian's Mandate")
     print("   ensuring usable evidence that can be automated at scale.")
     
@@ -237,7 +237,7 @@ def demonstrate_guardian_forge():
 def main():
     """Main demonstration function."""
     try:
-        success = demonstrate_guardian_forge()
+        success = demonstrate_guardians_armory()
         return 0 if success else 1
     except Exception as e:
         print(f"❌ Demonstration failed: {e}")
