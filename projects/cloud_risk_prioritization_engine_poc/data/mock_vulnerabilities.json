@@ -1,0 +1,202 @@
+[
+  {
+    "id": "vuln-001",
+    "source": "AWS Security Hub",
+    "name": "S3 Bucket Public Read Access",
+    "cvss_base_severity": 7.5,
+    "asset_id": "asset-s3-001",
+    "asset_type": "S3",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Update bucket policy to restrict public access using AWS CLI: aws s3api put-bucket-acl --bucket BUCKET_NAME --acl private"
+  },
+  {
+    "id": "vuln-002",
+    "source": "Azure Defender",
+    "name": "Virtual Machine Missing OS Security Updates",
+    "cvss_base_severity": 8.1,
+    "asset_id": "asset-vm-001",
+    "asset_type": "Azure VM",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Enable automatic updates via Azure Update Management: az vm update --resource-group myResourceGroup --name myVM --set osProfile.windowsConfiguration.enableAutomaticUpdates=true"
+  },
+  {
+    "id": "vuln-003",
+    "source": "GCP Security Command Center",
+    "name": "Cloud SQL Instance Public IP Enabled",
+    "cvss_base_severity": 6.8,
+    "asset_id": "asset-sql-001",
+    "asset_type": "GCP Cloud SQL",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Disable public IP and use private IP: gcloud sql instances patch INSTANCE_NAME --no-assign-ip"
+  },
+  {
+    "id": "vuln-004",
+    "source": "Qualys VMDR",
+    "name": "Apache HTTP Server Remote Code Execution",
+    "cvss_base_severity": 9.8,
+    "asset_id": "asset-ec2-001",
+    "asset_type": "EC2",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Update Apache via Systems Manager: aws ssm send-command --document-name 'AWS-RunShellScript' --parameters 'commands=[\"sudo yum update httpd -y\"]' --targets 'Key=instanceids,Values=INSTANCE_ID'"
+  },
+  {
+    "id": "vuln-005",
+    "source": "AWS Security Hub",
+    "name": "RDS Instance Public Accessibility",
+    "cvss_base_severity": 5.3,
+    "asset_id": "asset-rds-001",
+    "asset_type": "RDS",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Modify RDS instance to disable public accessibility: aws rds modify-db-instance --db-instance-identifier mydbinstance --no-publicly-accessible"
+  },
+  {
+    "id": "vuln-006",
+    "source": "Azure Defender",
+    "name": "Network Security Group Allows RDP from Internet",
+    "cvss_base_severity": 7.2,
+    "asset_id": "asset-nsg-001",
+    "asset_type": "Azure NSG",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Update NSG rule to restrict RDP access: az network nsg rule update --resource-group myResourceGroup --nsg-name myNsg --name myNsgRule --source-address-prefixes 10.0.0.0/8"
+  },
+  {
+    "id": "vuln-007",
+    "source": "GCP Security Command Center",
+    "name": "Compute Instance Default Service Account",
+    "cvss_base_severity": 4.3,
+    "asset_id": "asset-compute-001",
+    "asset_type": "GCP Compute",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Create custom service account with minimal permissions: gcloud iam service-accounts create custom-sa --display-name='Custom Service Account'"
+  },
+  {
+    "id": "vuln-008",
+    "source": "Tenable Nessus",
+    "name": "OpenSSL Vulnerability (Heartbleed)",
+    "cvss_base_severity": 7.5,
+    "asset_id": "asset-lb-001",
+    "asset_type": "AWS ALB",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Update SSL/TLS policy on ALB: aws elbv2 modify-listener --listener-arn LISTENER_ARN --ssl-policy ELBSecurityPolicy-TLS-1-2-2017-01"
+  },
+  {
+    "id": "vuln-009",
+    "source": "AWS Security Hub",
+    "name": "EC2 Instance with IMDSv1 Enabled",
+    "cvss_base_severity": 3.7,
+    "asset_id": "asset-ec2-002",
+    "asset_type": "EC2",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Enforce IMDSv2: aws ec2 modify-instance-metadata-options --instance-id INSTANCE_ID --http-tokens required --http-put-response-hop-limit 1"
+  },
+  {
+    "id": "vuln-010",
+    "source": "Azure Defender",
+    "name": "Storage Account Allows HTTP Traffic",
+    "cvss_base_severity": 5.9,
+    "asset_id": "asset-storage-001",
+    "asset_type": "Azure Storage",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Enforce HTTPS only: az storage account update --resource-group myResourceGroup --name mystorageaccount --https-only true"
+  },
+  {
+    "id": "vuln-011",
+    "source": "Rapid7 InsightVM",
+    "name": "MySQL Weak Password Policy",
+    "cvss_base_severity": 6.5,
+    "asset_id": "asset-rds-002",
+    "asset_type": "RDS",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Enable parameter group with strong password validation: aws rds modify-db-parameter-group --db-parameter-group-name mydbparametergroup --parameters ParameterName=validate_password_policy,ParameterValue=STRONG"
+  },
+  {
+    "id": "vuln-012",
+    "source": "GCP Security Command Center",
+    "name": "GKE Cluster Legacy Authorization Enabled",
+    "cvss_base_severity": 4.8,
+    "asset_id": "asset-gke-001",
+    "asset_type": "GKE Cluster",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Disable legacy ABAC: gcloud container clusters update CLUSTER_NAME --zone=ZONE --no-enable-legacy-authorization"
+  },
+  {
+    "id": "vuln-013",
+    "source": "AWS Security Hub",
+    "name": "Lambda Function with Excessive Permissions",
+    "cvss_base_severity": 5.4,
+    "asset_id": "asset-lambda-001",
+    "asset_type": "Lambda",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Apply principle of least privilege by updating IAM role: aws iam put-role-policy --role-name lambda-role --policy-name lambda-policy --policy-document file://minimal-policy.json"
+  },
+  {
+    "id": "vuln-014",
+    "source": "Qualys VMDR",
+    "name": "WordPress Core Vulnerability",
+    "cvss_base_severity": 8.6,
+    "asset_id": "asset-ec2-003",
+    "asset_type": "EC2",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Update WordPress via Systems Manager automation: aws ssm start-automation-execution --document-name 'Custom-UpdateWordPress' --parameters 'InstanceId=INSTANCE_ID'"
+  },
+  {
+    "id": "vuln-015",
+    "source": "Azure Defender",
+    "name": "Key Vault Soft Delete Disabled",
+    "cvss_base_severity": 3.1,
+    "asset_id": "asset-keyvault-001",
+    "asset_type": "Azure Key Vault",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Enable soft delete protection: az keyvault update --name mykeyvault --resource-group myResourceGroup --enable-soft-delete true --retention-days 90"
+  },
+  {
+    "id": "vuln-016",
+    "source": "Nmap Custom Scan",
+    "name": "SSH Weak Cipher Configuration",
+    "cvss_base_severity": 4.9,
+    "asset_id": "asset-ec2-004",
+    "asset_type": "EC2",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Update SSH configuration via Systems Manager: aws ssm send-command --document-name 'AWS-RunShellScript' --parameters 'commands=[\"sudo sed -i 's/#Ciphers.*/Ciphers aes256-ctr,aes192-ctr,aes128-ctr/' /etc/ssh/sshd_config && sudo systemctl restart sshd\"]'"
+  },
+  {
+    "id": "vuln-017",
+    "source": "AWS Security Hub",
+    "name": "CloudTrail Log File Validation Disabled",
+    "cvss_base_severity": 2.3,
+    "asset_id": "asset-cloudtrail-001",
+    "asset_type": "CloudTrail",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Enable log file validation: aws cloudtrail update-trail --name mytrail --enable-log-file-validation"
+  },
+  {
+    "id": "vuln-018",
+    "source": "GCP Security Command Center",
+    "name": "BigQuery Dataset Public Access",
+    "cvss_base_severity": 6.2,
+    "asset_id": "asset-bigquery-001",
+    "asset_type": "BigQuery",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Remove public access from dataset: bq update --remove_access_entry=allUsers:READER PROJECT_ID:DATASET_ID"
+  },
+  {
+    "id": "vuln-019",
+    "source": "Tenable Nessus",
+    "name": "DNS Server Cache Poisoning Vulnerability",
+    "cvss_base_severity": 7.0,
+    "asset_id": "asset-ec2-005",
+    "asset_type": "EC2",
+    "publicly_accessible": true,
+    "remediation_steps_cloud_native": "Update BIND DNS server: aws ssm send-command --document-name 'AWS-RunShellScript' --parameters 'commands=[\"sudo yum update bind* -y && sudo systemctl restart named\"]'"
+  },
+  {
+    "id": "vuln-020",
+    "source": "Azure Defender",
+    "name": "SQL Database Auditing Disabled",
+    "cvss_base_severity": 3.5,
+    "asset_id": "asset-azuresql-001",
+    "asset_type": "Azure SQL",
+    "publicly_accessible": false,
+    "remediation_steps_cloud_native": "Enable SQL Database auditing: az sql db audit-policy update --resource-group myResourceGroup --server myserver --name mydatabase --state Enabled --storage-account mystorageaccount"
+  }
+]

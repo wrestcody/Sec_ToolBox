@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Cloud Risk Prioritization Engine</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            max-width: 400px;
+            width: 100%;
+        }
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .login-header h1 {
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .login-header p {
+            color: #666;
+            margin: 0;
+        }
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+        .security-notice {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border-radius: 4px;
+        }
+        .alert {
+            border-radius: 8px;
+        }
+        .password-requirements {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="login-container">
+                    <div class="login-header">
+                        <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                        <h1>Secure Login</h1>
+                        <p>Cloud Risk Prioritization Engine</p>
+                    </div>
+
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' }} me-2"></i>
+                                    {{ message|e }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST" action="{{ url_for('login') }}" novalidate>
+                        <div class="form-floating">
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="username" 
+                                   name="username" 
+                                   placeholder="Username"
+                                   required
+                                   autocomplete="username"
+                                   maxlength="80"
+                                   pattern="[a-zA-Z0-9_]+"
+                                   title="Username should contain only letters, numbers, and underscores">
+                            <label for="username">
+                                <i class="fas fa-user me-2"></i>Username
+                            </label>
+                            <div class="invalid-feedback">
+                                Please enter a valid username.
+                            </div>
+                        </div>
+
+                        <div class="form-floating">
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="Password"
+                                   required
+                                   autocomplete="current-password"
+                                   minlength="6">
+                            <label for="password">
+                                <i class="fas fa-lock me-2"></i>Password
+                            </label>
+                            <div class="invalid-feedback">
+                                Please enter your password.
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-login">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Sign In Securely
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="security-notice">
+                        <h6><i class="fas fa-shield-alt me-2"></i>Security Notice</h6>
+                        <ul class="mb-0 small">
+                            <li>All login attempts are logged</li>
+                            <li>Rate limiting is enforced</li>
+                            <li>Sessions expire after 4 hours</li>
+                            <li>Use strong passwords</li>
+                        </ul>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Default credentials: admin / admin123
+                            <br>
+                            <strong>Change default password in production!</strong>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Client-side form validation
+        (function() {
+            'use strict';
+            
+            // Add Bootstrap validation styles
+            const forms = document.querySelectorAll('form');
+            
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    
+                    form.classList.add('was-validated');
+                }, false);
+            });
+            
+            // Auto-dismiss alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 5000);
+            });
+            
+            // Security: Clear form on page unload
+            window.addEventListener('beforeunload', function() {
+                const passwordField = document.getElementById('password');
+                if (passwordField) {
+                    passwordField.value = '';
+                }
+            });
+            
+            // Focus on username field
+            document.addEventListener('DOMContentLoaded', function() {
+                const usernameField = document.getElementById('username');
+                if (usernameField) {
+                    usernameField.focus();
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
