@@ -47,10 +47,24 @@ except ImportError:
     GUARDIAN_MANDATE_AVAILABLE = False
 
 
-class IAMAnomalyDetector:
+
+# Import Guardian's Mandate integration
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+from guardians_mandate_integration import GuardianTool, EvidenceLevel, AuditEventType
+
+
+class IAMAnomalyDetector(GuardianTool):
     """Main class for detecting IAM behavioral anomalies with audit capabilities."""
     
     def __init__(self, baseline_days: int = 30, enable_guardian_mandate: bool = True):
+    super().__init__(
+        tool_name="IAMAnomalyDetector",
+        tool_version="1.0.0",
+        evidence_level=EvidenceLevel.HIGH
+    )
+
         """
         Initialize the anomaly detector with Guardian's Mandate integration.
         

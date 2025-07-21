@@ -1,0 +1,6 @@
+# Guardian's Mandate requirements
+cryptography>=41.0.0
+pycryptodome>=3.19.0
+
+# Tool-specific requirements
+# Add your tool's dependencies here
