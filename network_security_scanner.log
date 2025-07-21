@@ -1,0 +1,4 @@
+2025-07-21 00:20:24,889 - File Integrity Monitor - ERROR - Error adding monitoring path /tmp/tmpxutd8s7h: 'str' object has no attribute 'value'
+2025-07-21 00:20:24,890 - File Integrity Monitor - ERROR - Error adding monitoring path /tmp/tmpw9ivv56y: 'str' object has no attribute 'value'
+2025-07-21 00:20:34,211 - File Integrity Monitor - ERROR - Error adding monitoring path /tmp/tmp7v6jui2b: 'str' object has no attribute 'value'
+2025-07-21 00:20:34,212 - File Integrity Monitor - ERROR - Error adding monitoring path /tmp/tmpcxg27xvz: 'str' object has no attribute 'value'

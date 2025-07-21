@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guardians Armory - GRC Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #0a0a0a; color: #ffffff; }
+        .metric { background: #1a1a1a; padding: 20px; margin: 10px; border-radius: 8px; display: inline-block; }
+        .control { background: #1a1a1a; padding: 15px; margin: 10px; border-radius: 8px; }
+        .status-passed { color: #00d4aa; }
+        .status-warning { color: #ffa500; }
+        .status-failed { color: #ff4757; }
+        a { color: #00d4aa; text-decoration: none; }
+        .nav { margin-bottom: 20px; }
+        .cli-note { background: #2a2a2a; padding: 10px; margin: 10px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h1>🛡️ Guardians Armory GRC Platform</h1>
+        <p><strong>Bidirectional Accessibility Demo</strong> - Every GUI feature has a CLI equivalent</p>
+    </div>
+    
+    <h2>Compliance Summary</h2>
+    <div class="metric">
+        <strong>Overall Compliance:</strong> 50.0%
+    </div>
+    <div class="metric">
+        <strong>Total Controls:</strong> 2
+    </div>
+    <div class="metric">
+        <strong>Passed:</strong> 1 🟢
+    </div>
+    <div class="metric">
+        <strong>Warnings:</strong> 1 🟡
+    </div>
+    <div class="metric">
+        <strong>Failed:</strong> 0 🔴
+    </div>
+    
+    <div class="cli-note">
+        💻 CLI Equivalent: <code>python simple_bidirectional_grc.py summary</code>
+    </div>
+    
+    <h2>Controls</h2>
+    
+    <div class="control">
+        <h3>Access Control (CC6.1)</h3>
+        <p>Status: <span class="status-warning">WARNING</span></p>
+        <p>Framework: SOC2 | Category: Access Control</p>
+        <p>Owner: Security Team | Priority: Critical</p>
+        <p>💻 CLI Equivalent: <code>python simple_bidirectional_grc.py details CC6.1</code></p>
+    </div>
+    
+    <div class="control">
+        <h3>Data Protection (CC6.7)</h3>
+        <p>Status: <span class="status-passed">PASSED</span></p>
+        <p>Framework: SOC2 | Category: Data Protection</p>
+        <p>Owner: Infrastructure Team | Priority: Critical</p>
+        <p>💻 CLI Equivalent: <code>python simple_bidirectional_grc.py details CC6.7</code></p>
+    </div>
+    
+    
+    <h2>Available Actions</h2>
+    <div class="control">
+        <h3>Run Assessment</h3>
+        <p>💻 CLI Equivalent: <code>python simple_bidirectional_grc.py assess</code></p>
+        <p>💻 CLI Equivalent (specific control): <code>python simple_bidirectional_grc.py assess --control-id CC6.1</code></p>
+    </div>
+    
+    <div class="control">
+        <h3>Generate Report</h3>
+        <p>💻 CLI Equivalent: <code>python simple_bidirectional_grc.py report --type compliance</code></p>
+    </div>
+    
+    <div class="control">
+        <h3>Add New Control</h3>
+        <p>💻 CLI Equivalent: <code>python simple_bidirectional_grc.py add --name "New Control" --framework SOC2</code></p>
+    </div>
+    
+    <div class="control">
+        <h3>Update Control</h3>
+        <p>💻 CLI Equivalent: <code>python simple_bidirectional_grc.py update CC6.1 --name "Updated Name"</code></p>
+    </div>
+    
+    <h2>Bidirectional Accessibility Principle</h2>
+    <div class="control">
+        <p><strong>"If the tools have a CLI or API, then we need to have a GUI for that. If you can do it in the GUI, then we need an API or CLI and vice versa."</strong></p>
+        <p>✅ Every CLI command has a GUI equivalent</p>
+        <p>✅ Every GUI action has a CLI equivalent</p>
+        <p>✅ Shared core platform ensures consistency</p>
+        <p>✅ Same data and functionality across interfaces</p>
+    </div>
+</body>
+</html>

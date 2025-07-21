@@ -1,5 +1,8 @@
-# Core dependencies for Cloud Sentinel's Toolkit
+# Guardians Armory: Comprehensive Security & GRC Dependencies
 # Version constraints ensure security and compatibility
+
+# Core MCP library for AI integration
+mcp>=1.0.0
 
 # Cloud Provider SDKs
 boto3>=1.26.0,<2.0.0                     # AWS SDK for Python
@@ -14,19 +17,39 @@ pandas>=1.5.0,<3.0.0                     # Data manipulation and analysis
 numpy>=1.21.0,<2.0.0                     # Numerical computing
 networkx>=3.0,<4.0.0                     # Graph analysis for IAM relationships
 
-# Web Framework (for LLM Proxy)
+# Web Framework (for LLM Proxy and MCP Server)
 fastapi>=0.104.0,<1.0.0                  # Modern web framework
 uvicorn>=0.24.0,<1.0.0                   # ASGI server
 redis>=5.0.0,<6.0.0                      # Caching and session storage
 
 # Security and Encryption
-cryptography>=3.4.0,<42.0.0              # Encryption and hashing
-passlib[bcrypt]>=1.7.4,<2.0.0           # Password hashing
+cryptography>=41.0.0,<42.0.0             # Encryption and hashing
+pyjwt>=2.8.0,<3.0.0                      # JWT token handling
+bcrypt>=4.0.0,<5.0.0                     # Password hashing
+passlib[bcrypt]>=1.7.4,<2.0.0           # Password hashing utilities
+
+# Async support for MCP Server
+asyncio-mqtt>=0.16.0,<1.0.0              # Async MQTT support
+aiohttp>=3.9.0,<4.0.0                    # Async HTTP client/server
+
+# Logging and monitoring
+structlog>=23.2.0,<24.0.0                # Structured logging
+prometheus-client>=0.19.0,<1.0.0         # Metrics collection
+
+# Data validation
+pydantic>=2.5.0,<3.0.0                   # Data validation
+marshmallow>=3.20.0,<4.0.0               # Object serialization
+
+# Rate limiting
+slowapi>=0.1.9,<1.0.0                    # Rate limiting for APIs
+
+# Environment and configuration
+python-dotenv>=1.0.0,<2.0.0              # Environment variable management
+pydantic-settings>=2.1.0,<3.0.0          # Settings management
 
 # Configuration and CLI
 click>=8.0.0,<9.0.0                      # Command-line interface
 pyyaml>=6.0,<7.0.0                       # Configuration file parsing
-pydantic>=2.5.0,<3.0.0                   # Data validation
 
 # Visualization and Reporting
 matplotlib>=3.6.0,<4.0.0                 # Plotting library
@@ -40,16 +63,21 @@ requests>=2.28.0,<3.0.0                  # HTTP library (for compatibility)
 # Async Processing
 celery>=5.3.0,<6.0.0                     # Asynchronous task processing
 
-# Monitoring and Metrics
-prometheus-client>=0.19.0,<1.0.0         # Metrics collection
-
 # Database (for evidence storage)
 sqlalchemy>=1.4.0,<3.0.0                 # SQL toolkit and ORM
 alembic>=1.8.0,<2.0.0                    # Database migrations
 
-# Development and Testing (optional, see requirements-dev.txt)
-# pytest>=7.4.0,<8.0.0
-# pytest-cov>=4.0.0,<5.0.0
-# black>=22.0.0,<24.0.0
-# flake8>=5.0.0,<7.0.0
-# bandit>=1.7.0,<2.0.0
+# Testing and development
+pytest>=7.4.0,<8.0.0                     # Testing framework
+pytest-asyncio>=0.21.0,<1.0.0            # Async testing support
+pytest-cov>=4.1.0,<5.0.0                 # Test coverage
+
+# Code quality
+black>=23.11.0,<24.0.0                   # Code formatting
+flake8>=6.1.0,<7.0.0                     # Linting
+mypy>=1.7.0,<2.0.0                       # Type checking
+bandit>=1.7.0,<2.0.0                     # Security linting
+
+# Documentation
+sphinx>=7.2.0,<8.0.0                     # Documentation generator
+sphinx-rtd-theme>=1.3.0,<2.0.0           # Read the Docs theme

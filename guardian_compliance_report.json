@@ -1,0 +1,157 @@
+{
+  "report_info": {
+    "generated_at": "2025-07-21T00:22:16.445891",
+    "repository_path": ".",
+    "guardian_mandate_version": "1.0.0"
+  },
+  "compliance_check": {
+    "repository_path": ".",
+    "total_tools": 6,
+    "compliant_tools": 6,
+    "non_compliant_tools": 0,
+    "tool_results": [
+      {
+        "tool_path": "tools/network_security_scanner/network_security_scanner.py",
+        "compliant": true,
+        "issues": [],
+        "recommendations": [
+          "\u2705 Guardian's Mandate integration found",
+          "\u2705 Evidence recording found",
+          "\u2705 Integrity verification found",
+          "\u2705 Forensic export found"
+        ]
+      },
+      {
+        "tool_path": "tools/test_security_tool/test_security_tool.py",
+        "compliant": true,
+        "issues": [],
+        "recommendations": [
+          "\u2705 Guardian's Mandate integration found",
+          "\u2705 Evidence recording found",
+          "\u2705 Integrity verification found",
+          "\u2705 Forensic export found"
+        ]
+      },
+      {
+        "tool_path": "tools/file_integrity_monitor/file_integrity_monitor.py",
+        "compliant": true,
+        "issues": [],
+        "recommendations": [
+          "\u2705 Guardian's Mandate integration found",
+          "\u2705 Evidence recording found",
+          "\u2705 Integrity verification found",
+          "\u2705 Forensic export found"
+        ]
+      },
+      {
+        "tool_path": "tools/security/threat_intelligence_analyzer/threat_intelligence_analyzer.py",
+        "compliant": true,
+        "issues": [],
+        "recommendations": [
+          "\u2705 Guardian's Mandate integration found",
+          "\u2705 Evidence recording found",
+          "\u2705 Integrity verification found",
+          "\u2705 Forensic export found"
+        ]
+      },
+      {
+        "tool_path": "tools/security/log_analysis_tool/log_analysis_tool.py",
+        "compliant": true,
+        "issues": [],
+        "recommendations": [
+          "\u2705 Guardian's Mandate integration found",
+          "\u2705 Evidence recording found",
+          "\u2705 Integrity verification found",
+          "\u2705 Forensic export found"
+        ]
+      },
+      {
+        "tool_path": "tools/cloud_configuration_auditors/iam_anomaly_detector/iam_anomaly_detector.py",
+        "compliant": true,
+        "issues": [],
+        "recommendations": [
+          "\u2705 Guardian's Mandate integration found",
+          "\u2705 Evidence recording found",
+          "\u2705 Integrity verification found",
+          "\u2705 Forensic export found"
+        ]
+      }
+    ]
+  },
+  "enforcement_results": {
+    "total_tools": 6,
+    "enforced": 0,
+    "already_compliant": 6,
+    "failed": 0,
+    "details": [
+      {
+        "tool": "tools/network_security_scanner/network_security_scanner.py",
+        "status": "already_compliant"
+      },
+      {
+        "tool": "tools/test_security_tool/test_security_tool.py",
+        "status": "already_compliant"
+      },
+      {
+        "tool": "tools/file_integrity_monitor/file_integrity_monitor.py",
+        "status": "already_compliant"
+      },
+      {
+        "tool": "tools/security/threat_intelligence_analyzer/threat_intelligence_analyzer.py",
+        "status": "already_compliant"
+      },
+      {
+        "tool": "tools/security/log_analysis_tool/log_analysis_tool.py",
+        "status": "already_compliant"
+      },
+      {
+        "tool": "tools/cloud_configuration_auditors/iam_anomaly_detector/iam_anomaly_detector.py",
+        "status": "already_compliant"
+      }
+    ]
+  },
+  "test_results": {
+    "total_tests": 1,
+    "passed": 0,
+    "failed": 1,
+    "details": [
+      {
+        "test": "comprehensive_test_suite",
+        "status": "failed",
+        "output": ""
+      }
+    ]
+  },
+  "tools_inventory": [
+    {
+      "path": "tools/network_security_scanner/network_security_scanner.py",
+      "name": "network_security_scanner",
+      "type": "network_security_scanner"
+    },
+    {
+      "path": "tools/test_security_tool/test_security_tool.py",
+      "name": "test_security_tool",
+      "type": "test_security_tool"
+    },
+    {
+      "path": "tools/file_integrity_monitor/file_integrity_monitor.py",
+      "name": "file_integrity_monitor",
+      "type": "file_integrity_monitor"
+    },
+    {
+      "path": "tools/security/threat_intelligence_analyzer/threat_intelligence_analyzer.py",
+      "name": "threat_intelligence_analyzer",
+      "type": "threat_intelligence_analyzer"
+    },
+    {
+      "path": "tools/security/log_analysis_tool/log_analysis_tool.py",
+      "name": "log_analysis_tool",
+      "type": "log_analysis_tool"
+    },
+    {
+      "path": "tools/cloud_configuration_auditors/iam_anomaly_detector/iam_anomaly_detector.py",
+      "name": "iam_anomaly_detector",
+      "type": "iam_anomaly_detector"
+    }
+  ]
+}

@@ -1,0 +1,653 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardians Armory - GRC Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00d4aa;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.passed { background: #00d4aa; }
+        .status-dot.warning { background: #ffa500; }
+        .status-dot.failed { background: #ff4757; }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .metric-card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            border-color: #00d4aa;
+            transform: translateY(-2px);
+        }
+        
+        .metric-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .metric-label {
+            color: #888;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .controls-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        
+        .controls-grid {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .control-card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-card:hover {
+            border-color: #00d4aa;
+            background: #1f1f1f;
+        }
+        
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        
+        .control-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .control-status {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .control-status.passed { background: #00d4aa20; color: #00d4aa; }
+        .control-status.warning { background: #ffa50020; color: #ffa500; }
+        .control-status.failed { background: #ff475720; color: #ff4757; }
+        
+        .control-description {
+            color: #888;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        
+        .control-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .parameter-summary {
+            margin-top: 16px;
+            padding: 16px;
+            background: #0f0f0f;
+            border-radius: 8px;
+            border-left: 4px solid #00d4aa;
+        }
+        
+        .parameter-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .parameter-item:last-child {
+            border-bottom: none;
+        }
+        
+        .parameter-name {
+            font-weight: 500;
+            color: #ffffff;
+        }
+        
+        .parameter-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .parameter-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        
+        .parameter-dot.passed { background: #00d4aa; }
+        .parameter-dot.warning { background: #ffa500; }
+        .parameter-dot.failed { background: #ff4757; }
+        
+        .data-source {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .parameter-detail {
+            background: #0f0f0f;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .parameter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .evidence-box {
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 12px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: #00d4aa;
+        }
+        
+        .remediation-steps {
+            margin-top: 12px;
+        }
+        
+        .remediation-step {
+            background: #ffa50010;
+            border-left: 3px solid #ffa500;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🛡️ Guardians Armory</div>
+            <div class="status-indicator">
+                <div class="status-dot passed"></div>
+                <span>Live Monitoring Active</span>
+            </div>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value">55.6%</div>
+                <div class="metric-label">Overall Compliance</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">3</div>
+                <div class="metric-label">Active Controls</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">5/9</div>
+                <div class="metric-label">Parameters Passed</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">0</div>
+                <div class="metric-label">Failed Controls</div>
+            </div>
+        </div>
+        
+        <div class="controls-section">
+            <div class="section-title">Security Controls</div>
+            <div class="controls-grid">
+
+                <div class="control-card" onclick="showControlDetails('CC6.1')">
+                    <div class="control-header">
+                        <div>
+                            <div class="control-title">Access Control</div>
+                            <div class="control-meta">
+                                <span>SOC2</span>
+                                <span>•</span>
+                                <span>Access Control</span>
+                                <span>•</span>
+                                <span>Owner: Security Team</span>
+                            </div>
+                        </div>
+                        <div class="control-status warning">WARNING</div>
+                    </div>
+                    <div class="control-description">The entity implements logical access security software, infrastructure, and architectures over protected information assets to protect them from security events to meet the entity's objectives.</div>
+                    <div class="parameter-summary">
+                        <div style="margin-bottom: 12px; font-weight: 600; color: #ffffff;">Parameters (1/3 passed)</div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">IAM User Access Review</div>
+                                <div class="data-source">Source: Aws Config</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot passed"></div>
+                                <span>PASSED</span>
+                            </div>
+                        </div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">MFA Enforcement</div>
+                                <div class="data-source">Source: Aws Security Hub</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot warning"></div>
+                                <span>WARNING</span>
+                            </div>
+                        </div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">Privileged Access Management</div>
+                                <div class="data-source">Source: Aws Cloudtrail</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot failed"></div>
+                                <span>FAILED</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="control-card" onclick="showControlDetails('CC6.7')">
+                    <div class="control-header">
+                        <div>
+                            <div class="control-title">Data Protection</div>
+                            <div class="control-meta">
+                                <span>SOC2</span>
+                                <span>•</span>
+                                <span>Data Protection</span>
+                                <span>•</span>
+                                <span>Owner: Infrastructure Team</span>
+                            </div>
+                        </div>
+                        <div class="control-status passed">PASSED</div>
+                    </div>
+                    <div class="control-description">The entity implements logical and physical security controls to protect against unauthorized access to and use of protected information assets.</div>
+                    <div class="parameter-summary">
+                        <div style="margin-bottom: 12px; font-weight: 600; color: #ffffff;">Parameters (2/3 passed)</div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">Data Encryption at Rest</div>
+                                <div class="data-source">Source: Aws Config</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot passed"></div>
+                                <span>PASSED</span>
+                            </div>
+                        </div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">Data Encryption in Transit</div>
+                                <div class="data-source">Source: Api Scan</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot warning"></div>
+                                <span>WARNING</span>
+                            </div>
+                        </div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">Key Management</div>
+                                <div class="data-source">Source: Aws Cloudtrail</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot passed"></div>
+                                <span>PASSED</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="control-card" onclick="showControlDetails('CC7.1')">
+                    <div class="control-header">
+                        <div>
+                            <div class="control-title">Vulnerability Management</div>
+                            <div class="control-meta">
+                                <span>SOC2</span>
+                                <span>•</span>
+                                <span>Vulnerability Management</span>
+                                <span>•</span>
+                                <span>Owner: Security Team</span>
+                            </div>
+                        </div>
+                        <div class="control-status warning">WARNING</div>
+                    </div>
+                    <div class="control-description">The entity identifies and develops and maintains security configurations, patches, and updates to information and information systems to protect against vulnerabilities and threats.</div>
+                    <div class="parameter-summary">
+                        <div style="margin-bottom: 12px; font-weight: 600; color: #ffffff;">Parameters (2/3 passed)</div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">Vulnerability Scanning</div>
+                                <div class="data-source">Source: Api Scan</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot passed"></div>
+                                <span>PASSED</span>
+                            </div>
+                        </div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">Critical Vulnerability Remediation</div>
+                                <div class="data-source">Source: Code Analysis</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot failed"></div>
+                                <span>FAILED</span>
+                            </div>
+                        </div>
+
+                        <div class="parameter-item">
+                            <div>
+                                <div class="parameter-name">Patch Management</div>
+                                <div class="data-source">Source: Manual Assessment</div>
+                            </div>
+                            <div class="parameter-status">
+                                <div class="parameter-dot passed"></div>
+                                <span>PASSED</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for detailed control view -->
+    <div id="controlModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Control Details</h2>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showControlDetails(controlId) {
+            const modal = document.getElementById('controlModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            
+            // This would normally fetch from an API
+            // For demo purposes, we'll show sample data
+            const controlData = {
+                'CC6.1': {
+                    name: 'Access Control',
+                    description: 'The entity implements logical access security software, infrastructure, and architectures over protected information assets to protect them from security events to meet the entity's objectives.',
+                    framework: 'SOC2',
+                    category: 'Access Control',
+                    status: 'warning',
+                    parameters: [
+                        {
+                            name: 'IAM User Access Review',
+                            description: 'Verify that IAM user access is reviewed quarterly',
+                            expected_value: 'All users reviewed within last 90 days',
+                            actual_value: 'Last review: 2024-01-15 (45 days ago)',
+                            status: 'passed',
+                            data_source: 'AWS Config',
+                            evidence: 'AWS Config rule "iam-user-access-review" returned compliant',
+                            remediation_steps: ['Schedule quarterly access reviews', 'Document review process']
+                        },
+                        {
+                            name: 'MFA Enforcement',
+                            description: 'Ensure MFA is enabled for all IAM users',
+                            expected_value: 'MFA enabled for 100% of users',
+                            actual_value: 'MFA enabled for 98% of users (2 users pending)',
+                            status: 'warning',
+                            data_source: 'AWS Security Hub',
+                            evidence: 'Security Hub finding: 2 IAM users without MFA',
+                            remediation_steps: ['Enable MFA for remaining users', 'Set MFA enforcement policy']
+                        },
+                        {
+                            name: 'Privileged Access Management',
+                            description: 'Verify privileged access is limited and monitored',
+                            expected_value: 'No users with excessive permissions',
+                            actual_value: '3 users with admin privileges identified',
+                            status: 'failed',
+                            data_source: 'AWS CloudTrail',
+                            evidence: 'CloudTrail logs show admin actions by non-admin users',
+                            remediation_steps: ['Review admin privileges', 'Implement least privilege principle']
+                        }
+                    ]
+                }
+            };
+            
+            const control = controlData[controlId];
+            if (!control) return;
+            
+            modalTitle.textContent = control.name;
+            
+            let content = `
+                <div style="margin-bottom: 24px;">
+                    <h3 style="color: #888; margin-bottom: 8px;">Description</h3>
+                    <p>${control.description}</p>
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <h3 style="color: #888; margin-bottom: 8px;">Framework & Category</h3>
+                    <p><strong>${control.framework}</strong> • ${control.category}</p>
+                </div>
+                
+                <div style="margin-bottom: 24px;">
+                    <h3 style="color: #888; margin-bottom: 16px;">Parameters & Evidence</h3>
+            `;
+            
+            control.parameters.forEach(param => {
+                content += `
+                    <div class="parameter-detail">
+                        <div class="parameter-header">
+                            <div>
+                                <h4 style="color: #ffffff; margin-bottom: 4px;">${param.name}</h4>
+                                <p style="color: #888; font-size: 14px;">${param.description}</p>
+                            </div>
+                            <div class="control-status ${param.status}">${param.status.toUpperCase()}</div>
+                        </div>
+                        
+                        <div style="margin-top: 16px;">
+                            <div style="margin-bottom: 8px;">
+                                <strong style="color: #00d4aa;">Expected:</strong> ${param.expected_value}
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <strong style="color: #ffa500;">Actual:</strong> ${param.actual_value}
+                            </div>
+                            <div style="margin-bottom: 8px;">
+                                <strong style="color: #888;">Data Source:</strong> ${param.data_source}
+                            </div>
+                        </div>
+                        
+                        <div class="evidence-box">
+                            <strong>Evidence:</strong><br>
+                            ${param.evidence}
+                        </div>
+                        
+                        ${param.remediation_steps.length > 0 ? `
+                        <div class="remediation-steps">
+                            <strong style="color: #ffa500; margin-bottom: 8px; display: block;">Remediation Steps:</strong>
+                            ${param.remediation_steps.map(step => `<div class="remediation-step">${step}</div>`).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            content += '</div>';
+            modalContent.innerHTML = content;
+            modal.style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('controlModal').style.display = 'none';
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('controlModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
