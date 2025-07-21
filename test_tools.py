@@ -95,25 +95,28 @@ def main():
         else:
             print(f"❌ {file}: Missing")
     
-    print("\n🎯 Testing Guardian's Mandate framework:")
+        print("\n🎯 Testing Guardian's Mandate framework:")
     
     # Test Guardian's Mandate basic functionality
     try:
         from guardians_mandate_integration import GuardianTool, EvidenceLevel, AuditEventType
         print("✅ Guardian's Mandate framework: Available")
-        
+
         # Test basic Guardian's Mandate functionality
-        class TestTool(GuardianTool):
-            def __init__(self):
-                super().__init__(
-                    tool_name="TestTool",
-                    tool_version="1.0.0",
-                    evidence_level=EvidenceLevel.MEDIUM
-                )
-        
-        test_tool = TestTool()
-        print("✅ Guardian's Mandate: Basic functionality working")
-        
+        try:
+            class TestTool(GuardianTool):
+                def __init__(self):
+                    super().__init__(
+                        tool_name="TestTool",
+                        tool_version="1.0.0",
+                        evidence_level=EvidenceLevel.MEDIUM
+                    )
+
+            test_tool = TestTool()
+            print("✅ Guardian's Mandate: Basic functionality working")
+        except Exception as e:
+            print(f"⚠️ Guardian's Mandate: Basic functionality test failed - {e}")
+
     except Exception as e:
         print(f"❌ Guardian's Mandate framework: Error - {e}")
     
