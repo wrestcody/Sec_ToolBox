@@ -1,6 +1,11 @@
 # Guardians Armory: Unassailable Digital Evidence Integrity
 
-## Overview
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Security](https://img.shields.io/badge/security-first-green.svg)](SECURITY.md)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+## Mission Statement
 
 Guardians Armory is a comprehensive security tooling framework that implements **The Guardian's Mandate** - a foundational principle for building systems with unassailable digital evidence integrity and unbreakable chain of custody. This framework ensures that all security tools, audit trails, and forensic evidence meet the most stringent compliance and legal requirements.
 
@@ -39,6 +44,7 @@ The Guardian's Mandate is built on four core principles:
 - **Cryptographic Proof System**: SHA-256+ hashing with RSA digital signatures
 - **Chain of Custody Tracking**: Complete traceability of all evidence
 - **Forensic Export System**: Standardized, machine-readable forensic data export
+- **GRC MCP Server**: Secure AI integration with bidirectional accessibility
 
 ### Evidence Integrity Levels
 
@@ -46,6 +52,52 @@ The Guardian's Mandate is built on four core principles:
 - **HIGH**: Configuration changes, access logs - hashing and timestamping
 - **MEDIUM**: System events, performance metrics - basic logging
 - **LOW**: Informational logs, debug data - informational only
+
+## Featured Projects
+
+### 🔍 [IAM Privilege Escalation Path Finder](tools/cloud_configuration_auditors/aws_iam_privilege_escalation_finder/)
+Advanced graph-based analysis of AWS IAM configurations to identify potential privilege escalation paths. Demonstrates deep understanding of cloud IAM complexity and attack vector analysis.
+
+### 🌐 [Cross-Cloud Network Exposure Auditor](tools/cloud_configuration_auditors/cross_cloud_network_auditor/)
+Multi-cloud network security assessment tool covering AWS, Azure, and GCP. Identifies internet-facing resources and overly permissive network configurations.
+
+### 📋 [Cloud Compliance Evidence Collector](tools/data_privacy_tools/cloud_compliance_evidence_collector/)
+Automated GRC tool that maps compliance framework controls to cloud infrastructure evidence. Streamlines audit preparation and continuous compliance monitoring.
+
+### 🤖 [Secure LLM Interaction Proxy](projects/secure_llm_proxy/)
+Production-ready proxy service implementing security and privacy controls for LLM interactions. Addresses prompt injection, PII protection, and response filtering.
+
+### 🛡️ [GRC MCP Server](grc_mcp_server.py)
+Production-ready Model Context Protocol (MCP) server for secure AI assistant integrations with comprehensive security features and bidirectional accessibility.
+
+## Technology Stack Demonstrated
+
+**Cloud Platforms**: AWS, Azure, GCP  
+**Languages**: Python, Bash, YAML/JSON  
+**Security**: IAM, Network Security, Compliance Frameworks, SAST/DAST  
+**AI/ML**: LLM Security, Adversarial ML, Privacy-Preserving AI, MCP Integration  
+**DevSecOps**: CI/CD Security, Infrastructure as Code, Policy as Code  
+**GRC**: NIST, SOC 2, GDPR, CCPA, Risk Assessment Automation  
+
+## Repository Navigation
+
+```
+📁 .github/          # GitHub workflows and templates
+📁 docs/             # Comprehensive documentation and philosophy
+📁 modules/          # Reusable code libraries and utilities
+📁 tools/            # Standalone security and compliance tools
+📁 concepts/         # Architectural diagrams and policy templates
+📁 projects/         # Integrated mini-applications and PoCs
+```
+
+### Quick Start Guides
+- [Setup Guide](docs/setup_guide.md) - Environment setup for all tools
+- [Contribution Guide](docs/contribution_guide.md) - How to contribute securely
+- [Personal Philosophy](docs/personal_philosophy.md) - My approach to Security, GRC & AI
+
+### Trend Analysis
+- [2025 Cloud Security Trends](docs/trends_analysis/2025_cloud_security_trends.md)
+- [2025 AI Privacy & GRC Trends](docs/trends_analysis/2025_ai_privacy_grc_trends.md)
 
 ## 🚀 Quick Start
 
@@ -56,7 +108,7 @@ The Guardian's Mandate is built on four core principles:
 python --version
 
 # Install dependencies
-pip install -r guardians_mandate_requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Basic Usage
@@ -90,7 +142,20 @@ print(f"Integrity verified: {integrity_result['verified']}")
 export_path = ledger.export_forensic_data("forensic_export.json")
 ```
 
-#### 2. IAM Anomaly Detector with Guardian's Mandate
+#### 2. GRC MCP Server for AI Integration
+
+```bash
+# Generate secure configuration
+python grc_mcp_server.py generate-config
+
+# Start the MCP server
+python grc_mcp_server.py
+
+# Run demo to see AI integration
+python mcp_demo.py
+```
+
+#### 3. IAM Anomaly Detector with Guardian's Mandate
 
 ```bash
 # Run with Guardian's Mandate enabled (default)
@@ -106,7 +171,7 @@ python tools/cloud_configuration_auditors/iam_anomaly_detector/iam_anomaly_detec
     --log-file mock_cloudtrail_logs.json --output-format audit
 ```
 
-#### 3. Run Tests
+#### 4. Run Tests
 
 ```bash
 # Run comprehensive test suite
@@ -122,6 +187,14 @@ python test_guardians_mandate.py
 - **Chain of Custody**: Complete traceability of evidence from detection to reporting
 - **Forensic Export**: Standardized forensic data export with cryptographic proofs
 - **Compliance Alignment**: Enhanced compliance reporting for SOC2, ISO27001, NIST, and CIS
+
+### AI Integration & MCP Server
+
+- **Secure AI Access**: API key authentication and session management
+- **Natural Language Queries**: AI assistants can ask questions in plain English
+- **Rate Limiting**: 60 requests per minute per client with abuse prevention
+- **Audit Logging**: Complete trail of all AI interactions
+- **Bidirectional Accessibility**: CLI, GUI, API, and MCP interfaces
 
 ### IAM Anomaly Detection
 
@@ -149,7 +222,7 @@ git clone <repository-url>
 cd guardians-forge
 
 # Install all dependencies
-pip install -r guardians_mandate_requirements.txt
+pip install -r requirements.txt
 
 # Verify installation
 python test_guardians_mandate.py
@@ -259,7 +332,19 @@ python tools/cloud_configuration_auditors/iam_anomaly_detector/iam_anomaly_detec
    Compliance Ready: YES
 ```
 
-### Example 2: Forensic Export
+### Example 2: AI Integration with MCP Server
+
+```bash
+# Start MCP server for AI assistant integration
+python grc_mcp_server.py
+
+# AI Assistant can now ask:
+# "What's our current compliance status?"
+# "Show me all SOC2 controls"
+# "Run assessment on access control CC6.1"
+```
+
+### Example 3: Forensic Export
 
 ```bash
 # Export forensic data for compliance
@@ -283,7 +368,7 @@ python tools/cloud_configuration_auditors/iam_anomaly_detector/iam_anomaly_detec
    - Chain of Custody: COMPLETE
 ```
 
-### Example 3: Custom Guardian's Mandate Integration
+### Example 4: Custom Guardian's Mandate Integration
 
 ```python
 from guardians_mandate import GuardianLedger, EvidenceLevel, AuditEventType
@@ -340,6 +425,13 @@ print(f"Forensic data: {export_path}")
 - Each event is cryptographically linked to the previous event
 - Integrity checkpoints are created regularly for forensic purposes
 
+### AI Integration Security
+
+- API key authentication with secure key management
+- Rate limiting to prevent abuse
+- Complete audit trail of all AI interactions
+- Input validation and sanitization
+
 ## 🧪 Testing
 
 ### Run All Tests
@@ -362,6 +454,9 @@ python -c "
 from test_guardians_mandate import test_iam_anomaly_detector_integration
 test_iam_anomaly_detector_integration()
 "
+
+# Test MCP Server
+python mcp_demo.py
 ```
 
 ## 📚 Documentation
@@ -369,6 +464,7 @@ test_iam_anomaly_detector_integration()
 - **[The Guardian's Mandate Framework](GUARDIANS_MANDATE.md)**: Comprehensive documentation of the core framework
 - **[IAM Anomaly Detector Documentation](tools/cloud_configuration_auditors/iam_anomaly_detector/README.md)**: Detailed usage guide for the anomaly detector
 - **[Compliance Guidelines](tools/cloud_configuration_auditors/iam_anomaly_detector/AUDIT_READINESS.md)**: Compliance and audit readiness documentation
+- **[MCP Server Documentation](MCP_SERVER_README.md)**: AI integration guide and security best practices
 
 ## 🤝 Contributing
 
@@ -380,7 +476,7 @@ git clone <repository-url>
 cd guardians-forge
 
 # Install development dependencies
-pip install -r guardians_mandate_requirements.txt
+pip install -r requirements.txt
 
 # Install pre-commit hooks
 pre-commit install
@@ -396,6 +492,23 @@ python test_guardians_mandate.py
 - Write unit tests for all new features
 - Ensure Guardian's Mandate compliance for all security-related code
 
+## Professional Background & Expertise
+
+With extensive experience in Security, Privacy, Compliance, and AI, particularly in AWS SaaS environments, I've built and operated cloud solutions at scale. This repository demonstrates practical applications of:
+
+- **Cloud Security Architecture**: Zero-trust implementations, IAM optimization, network security
+- **GRC Automation**: Compliance-as-code, risk assessment automation, audit preparation
+- **AI Security**: LLM safety, adversarial ML defense, privacy-preserving AI techniques
+- **DevSecOps**: Security integration throughout the development lifecycle
+- **Digital Evidence Integrity**: Unassailable chain of custody and forensic readiness
+
+## Connect & Collaborate
+
+🔗 **LinkedIn**: [Your LinkedIn Profile]  
+🌐 **Website**: [Your Professional Website]  
+📧 **Email**: [your.professional.email@domain.com]  
+🐙 **GitHub**: You're already here!  
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -406,7 +519,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 1. **Import Error**: Guardian's Mandate framework not available
    ```bash
-   pip install -r guardians_mandate_requirements.txt
+   pip install -r requirements.txt
    ```
 
 2. **Integrity Verification Failed**
@@ -416,6 +529,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 3. **Performance Issues**
    - Consider using database backends for large-scale deployments
    - Implement batch processing for high-volume events
+
+4. **MCP Server Issues**
+   - Install MCP library: `pip install mcp`
+   - Generate secure configuration: `python grc_mcp_server.py generate-config`
+   - Check audit logs for security events
 
 ### Getting Help
 
@@ -433,12 +551,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 4. **Cloud Integration**: Native integration with AWS, Azure, and GCP services
 5. **Real-time Monitoring**: Real-time integrity monitoring and alerting
 6. **Additional Security Tools**: Integration with more security tools and frameworks
+7. **Enhanced AI Integration**: Advanced natural language processing and AI assistant capabilities
 
 ### Version History
 
+- **v2.1.0**: GRC MCP Server with AI integration and bidirectional accessibility
 - **v2.0.0**: Guardian's Mandate integration with IAM Anomaly Detector
 - **v1.0.0**: Initial IAM Anomaly Detector release
 
 ---
 
 **The Guardian's Forge** - Building security tools with unassailable digital evidence integrity and unbreakable chain of custody.
+
+*"Security is not a product, but a process. This repository is my contribution to that ongoing process."*

@@ -1,0 +1,273 @@
+[
+  {
+    "asset_id": "asset-s3-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "true",
+      "owner_team": "core-app",
+      "cost_center": "engineering",
+      "application": "customer-portal",
+      "backup_required": "true"
+    },
+    "business_impact_tier": "Tier 0: Mission Critical",
+    "data_sensitivity": "PII"
+  },
+  {
+    "asset_id": "asset-vm-001",
+    "cloud_tags": {
+      "environment": "development",
+      "pci_scope": "false",
+      "owner_team": "frontend-dev",
+      "cost_center": "engineering",
+      "application": "test-environment",
+      "auto_shutdown": "true"
+    },
+    "business_impact_tier": "Tier 3: Low",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-sql-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "true",
+      "owner_team": "data-platform",
+      "cost_center": "engineering",
+      "application": "analytics-db",
+      "backup_required": "true",
+      "encryption_required": "true"
+    },
+    "business_impact_tier": "Tier 1: High",
+    "data_sensitivity": "Financial"
+  },
+  {
+    "asset_id": "asset-ec2-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "web-services",
+      "cost_center": "engineering",
+      "application": "marketing-website",
+      "public_facing": "true"
+    },
+    "business_impact_tier": "Tier 2: Medium",
+    "data_sensitivity": "Public"
+  },
+  {
+    "asset_id": "asset-rds-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "true",
+      "sox_scope": "true",
+      "owner_team": "payments",
+      "cost_center": "finance",
+      "application": "payment-processing",
+      "backup_required": "true",
+      "encryption_required": "true"
+    },
+    "business_impact_tier": "Tier 0: Mission Critical",
+    "data_sensitivity": "Financial"
+  },
+  {
+    "asset_id": "asset-nsg-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "infrastructure",
+      "cost_center": "operations",
+      "application": "network-security",
+      "critical_resource": "true"
+    },
+    "business_impact_tier": "Tier 1: High",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-compute-001",
+    "cloud_tags": {
+      "environment": "staging",
+      "pci_scope": "false",
+      "owner_team": "qa-team",
+      "cost_center": "engineering",
+      "application": "integration-testing",
+      "auto_shutdown": "true"
+    },
+    "business_impact_tier": "Tier 2: Medium",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-lb-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "true",
+      "owner_team": "core-app",
+      "cost_center": "engineering",
+      "application": "api-gateway",
+      "public_facing": "true",
+      "high_availability": "true"
+    },
+    "business_impact_tier": "Tier 0: Mission Critical",
+    "data_sensitivity": "PII"
+  },
+  {
+    "asset_id": "asset-ec2-002",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "devops",
+      "cost_center": "operations",
+      "application": "monitoring-tools",
+      "backup_required": "false"
+    },
+    "business_impact_tier": "Tier 2: Medium",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-storage-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "marketing",
+      "cost_center": "marketing",
+      "application": "content-delivery",
+      "public_facing": "true"
+    },
+    "business_impact_tier": "Tier 2: Medium",
+    "data_sensitivity": "Public"
+  },
+  {
+    "asset_id": "asset-rds-002",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "analytics",
+      "cost_center": "business-intelligence",
+      "application": "reporting-db",
+      "backup_required": "true"
+    },
+    "business_impact_tier": "Tier 1: High",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-gke-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "microservices",
+      "cost_center": "engineering",
+      "application": "container-platform",
+      "auto_scaling": "true"
+    },
+    "business_impact_tier": "Tier 1: High",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-lambda-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "automation",
+      "cost_center": "operations",
+      "application": "serverless-functions",
+      "cost_optimized": "true"
+    },
+    "business_impact_tier": "Tier 2: Medium",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-ec2-003",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "content-management",
+      "cost_center": "marketing",
+      "application": "cms-platform",
+      "public_facing": "true",
+      "backup_required": "true"
+    },
+    "business_impact_tier": "Tier 1: High",
+    "data_sensitivity": "Public"
+  },
+  {
+    "asset_id": "asset-keyvault-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "true",
+      "sox_scope": "true",
+      "owner_team": "security",
+      "cost_center": "security",
+      "application": "secrets-management",
+      "critical_resource": "true",
+      "encryption_required": "true"
+    },
+    "business_impact_tier": "Tier 0: Mission Critical",
+    "data_sensitivity": "Confidential"
+  },
+  {
+    "asset_id": "asset-ec2-004",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "support",
+      "cost_center": "customer-success",
+      "application": "support-tools",
+      "backup_required": "false"
+    },
+    "business_impact_tier": "Tier 2: Medium",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-cloudtrail-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "true",
+      "sox_scope": "true",
+      "owner_team": "security",
+      "cost_center": "security",
+      "application": "audit-logging",
+      "critical_resource": "true",
+      "retention_required": "true"
+    },
+    "business_impact_tier": "Tier 0: Mission Critical",
+    "data_sensitivity": "Confidential"
+  },
+  {
+    "asset_id": "asset-bigquery-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "data-science",
+      "cost_center": "business-intelligence",
+      "application": "ml-analytics",
+      "public_dataset": "true"
+    },
+    "business_impact_tier": "Tier 2: Medium",
+    "data_sensitivity": "Public"
+  },
+  {
+    "asset_id": "asset-ec2-005",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "false",
+      "owner_team": "infrastructure",
+      "cost_center": "operations",
+      "application": "dns-services",
+      "critical_resource": "true",
+      "high_availability": "true"
+    },
+    "business_impact_tier": "Tier 1: High",
+    "data_sensitivity": "Internal"
+  },
+  {
+    "asset_id": "asset-azuresql-001",
+    "cloud_tags": {
+      "environment": "production",
+      "pci_scope": "true",
+      "owner_team": "finance",
+      "cost_center": "finance",
+      "application": "financial-reporting",
+      "backup_required": "true",
+      "encryption_required": "true"
+    },
+    "business_impact_tier": "Tier 0: Mission Critical",
+    "data_sensitivity": "Financial"
+  }
+]
