@@ -1,0 +1,57 @@
+# Example AWS S3 Encryption Compliance Policy using AWS Config
+# This policy demonstrates how to use AWS Config for evidence collection
+# Control: NIST CSF PR.DS-1 - Data-at-rest protection
+# Framework: NIST Cybersecurity Framework
+
+- control_id: "NIST_CSF_PR.DS-1"
+  description: "Data-at-rest protection - S3 bucket encryption compliance"
+  cloud_provider: "aws"
+  resource_type: "s3_bucket"
+  evidence_collection_method:
+    source_type: "aws_config_query"
+    # Option 1: Use AWS Config Rule evaluation
+    config_rule_name: "s3-bucket-server-side-encryption-enabled"
+    compliance_status: "NON_COMPLIANT"  # Optional: filter for specific compliance status
+    # Option 2: Use AWS Config Advanced Query (alternative approach)
+    # advanced_query: |
+    #   SELECT
+    #     configurationItemId,
+    #     resourceId,
+    #     resourceName,
+    #     configurationItemStatus,
+    #     configuration
+    #   WHERE
+    #     resourceType = 'AWS::S3::Bucket'
+    #     AND configuration.serverSideEncryptionConfiguration IS NULL
+  validation_logic:
+    description: "S3 buckets must have server-side encryption enabled"
+    expected_result: "All S3 buckets should have server-side encryption configuration"
+
+- control_id: "SOC2_CC6.1"
+  description: "Logical and physical access controls - S3 bucket public access"
+  cloud_provider: "aws"
+  resource_type: "s3_bucket"
+  evidence_collection_method:
+    source_type: "aws_config_query"
+    config_rule_name: "s3-bucket-public-read-prohibited"
+    compliance_status: "NON_COMPLIANT"
+
+- control_id: "PCI_DSS_3.4"
+  description: "Protect stored cardholder data - S3 bucket encryption at rest"
+  cloud_provider: "aws"
+  resource_type: "s3_bucket"
+  evidence_collection_method:
+    source_type: "aws_config_query"
+    # Using Advanced Query for more specific filtering
+    advanced_query: |
+      SELECT
+        configurationItemId,
+        resourceId,
+        resourceName,
+        configuration.serverSideEncryptionConfiguration
+      WHERE
+        resourceType = 'AWS::S3::Bucket'
+        AND (
+          configuration.serverSideEncryptionConfiguration IS NULL
+          OR configuration.serverSideEncryptionConfiguration.rules[0].applyServerSideEncryptionByDefault.sseAlgorithm IS NULL
+        )

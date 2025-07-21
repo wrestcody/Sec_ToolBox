@@ -1,0 +1,33 @@
+{
+  "report_metadata": {
+    "generated_at": "2025-07-21T02:10:06.725234+00:00",
+    "tool_version": "1.0.0",
+    "total_evidence_bundles": 2,
+    "evidence_sources": [
+      "aws_config",
+      "direct_api"
+    ]
+  },
+  "evidence_by_control": {
+    "NIST_CSF_PR.DS-1": [
+      {
+        "control_id": "NIST_CSF_PR.DS-1",
+        "resource_type": "s3_bucket",
+        "cloud_provider": "aws",
+        "evidence_source": "aws_config",
+        "evidence_hash": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+        "collection_timestamp": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "NIST_CSF_PR.AC-4": [
+      {
+        "control_id": "NIST_CSF_PR.AC-4",
+        "resource_type": "iam_user",
+        "cloud_provider": "aws",
+        "evidence_source": "direct_api",
+        "evidence_hash": "f6e5d4c3b2a1f6e5d4c3b2a1f6e5d4c3b2a1f6e5d4c3b2a1f6e5d4c3b2a1f6e5d4c3b2a1f6e5d4c3b2a1f6e5d4c3b2a1",
+        "collection_timestamp": "2024-01-15T10:31:00Z"
+      }
+    ]
+  }
+}
