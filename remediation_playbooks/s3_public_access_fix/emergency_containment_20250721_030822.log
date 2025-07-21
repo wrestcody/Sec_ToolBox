@@ -1,0 +1,4 @@
+[0;34m[INFO][0m 2025-07-21 03:08:22: Starting emergency containment for bucket: my-critical-data-prod
+[0;34m[INFO][0m 2025-07-21 03:08:22: Guardian Priority Score: 10.3/10 (Critical)
+[0;34m[INFO][0m 2025-07-21 03:08:22: Checking prerequisites...
+[0;31m[ERROR][0m 2025-07-21 03:08:22: AWS CLI is not installed. Please install it first.
