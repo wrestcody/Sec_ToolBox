@@ -162,6 +162,32 @@ Instead of just reading about leadership, we **learn by building**:
 # - Lead teams in responsible AI development
 ```
 
+### **4. Emerging Threat Leadership Framework**
+
+#### **FedRAMP Vulnerability Manager**
+*Demonstrates: Federal compliance leadership, AI threat management*
+
+```python
+# Shows how to lead vulnerability management in federal environments
+# Key leadership insights:
+# - Navigate complex federal compliance requirements (FedRAMP, FISMA, NIST)
+# - Manage AI-powered threats and vulnerabilities
+# - Build scalable compliance automation programs
+# - Lead teams through regulatory complexity
+```
+
+#### **Supply Chain Security Analyzer**
+*Demonstrates: Modern supply chain threat analysis, SBOM management*
+
+```python
+# Shows how to lead supply chain security in modern environments
+# Key leadership insights:
+# - Detect and respond to AI-powered supply chain attacks
+# - Manage vendor risk in complex ecosystems
+# - Build SBOM programs for compliance and transparency
+# - Lead teams through supply chain transformation
+```
+
 ---
 
 ## 📚 **Leadership Development Resources**
@@ -192,6 +218,15 @@ Instead of just reading about leadership, we **learn by building**:
 - **Privacy-Preserving AI**: Technical and ethical approaches
 - **Evolving Regulatory Landscape**: Navigating complexity
 - **Integrated GRC Platforms**: Holistic risk management
+
+#### **[2025 Emerging Security Challenges](docs/trends_analysis/2025_emerging_security_challenges.md)**
+*Critical challenges for technical leaders in 2025*
+
+- **AI-Powered Supply Chain Attacks**: Modern threat detection and response
+- **Quantum Computing Threats**: Future-proofing cryptographic systems
+- **Zero-Day Exploitation at Scale**: Rapid threat response strategies
+- **Regulatory Fragmentation**: Multi-framework compliance management
+- **Cloud-Native Security Complexity**: Modern architecture security
 
 ### **Practical Leadership Tools**
 
