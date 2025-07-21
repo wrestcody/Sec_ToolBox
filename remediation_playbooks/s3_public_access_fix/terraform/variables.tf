@@ -1,79 +1,51 @@
-# S3 Public Access Remediation - Variables
-# 
-# This file defines all variables used in the S3 security remediation
-# All variables include secure defaults and validation rules
+# S3 Bucket Security Remediation - Variables
+# Defines all input variables with validation and secure defaults
 
-# =============================================================================
-# CORE CONFIGURATION VARIABLES
-# =============================================================================
-
-variable "aws_region" {
-  description = "AWS region for resource deployment"
+variable "bucket_name" {
+  description = "Name of the S3 bucket to secure (must be existing bucket)"
   type        = string
-  default     = "us-east-1"
   
   validation {
-    condition     = can(regex("^[a-z]{2}-[a-z]+-[0-9]+$", var.aws_region))
-    error_message = "AWS region must be in the format 'us-east-1', 'eu-west-1', etc."
+    condition     = can(regex("^[a-z0-9][a-z0-9.-]*[a-z0-9]$", var.bucket_name))
+    error_message = "Bucket name must be valid S3 bucket name format."
   }
 }
 
 variable "environment" {
-  description = "Environment name (e.g., production, staging, development)"
+  description = "Environment name (e.g., prod, staging, dev)"
   type        = string
-  default     = "production"
+  default     = "prod"
   
   validation {
-    condition     = contains(["production", "staging", "development"], var.environment)
-    error_message = "Environment must be one of: production, staging, development."
+    condition     = contains(["prod", "staging", "dev", "test"], var.environment)
+    error_message = "Environment must be one of: prod, staging, dev, test."
   }
 }
 
-variable "critical_bucket_name" {
-  description = "Name of the critical S3 bucket that needs remediation"
-  type        = string
-  default     = "my-critical-data-prod"
-  
-  validation {
-    condition     = can(regex("^[a-z0-9][a-z0-9.-]*[a-z0-9]$", var.critical_bucket_name))
-    error_message = "Bucket name must be between 3 and 63 characters, contain only lowercase letters, numbers, dots, and hyphens, and start/end with a letter or number."
-  }
-}
-
-# =============================================================================
-# SECURITY CONFIGURATION VARIABLES
-# =============================================================================
-
-variable "authorized_roles" {
-  description = "List of IAM role ARNs authorized to access the critical bucket"
+variable "authorized_iam_roles" {
+  description = "List of IAM role ARNs authorized to access the bucket"
   type        = list(string)
   default     = []
   
   validation {
     condition = alltrue([
-      for role in var.authorized_roles : can(regex("^arn:aws:iam::[0-9]{12}:role/", role))
+      for role in var.authorized_iam_roles : can(regex("^arn:aws:iam::[0-9]{12}:role/", role))
     ])
-    error_message = "All authorized roles must be valid IAM role ARNs."
+    error_message = "All authorized IAM roles must be valid ARNs."
   }
 }
 
-variable "authorized_users" {
-  description = "List of IAM user ARNs authorized to access the critical bucket"
+variable "authorized_iam_users" {
+  description = "List of IAM user ARNs authorized to access the bucket"
   type        = list(string)
   default     = []
   
   validation {
     condition = alltrue([
-      for user in var.authorized_users : can(regex("^arn:aws:iam::[0-9]{12}:user/", user))
+      for user in var.authorized_iam_users : can(regex("^arn:aws:iam::[0-9]{12}:user/", user))
     ])
-    error_message = "All authorized users must be valid IAM user ARNs."
+    error_message = "All authorized IAM users must be valid ARNs."
   }
-}
-
-variable "enable_mfa_enforcement" {
-  description = "Enable MFA enforcement for sensitive operations"
-  type        = bool
-  default     = true
 }
 
 variable "encryption_algorithm" {
@@ -83,12 +55,12 @@ variable "encryption_algorithm" {
   
   validation {
     condition     = contains(["AES256", "aws:kms"], var.encryption_algorithm)
-    error_message = "Encryption algorithm must be either 'AES256' or 'aws:kms'."
+    error_message = "Encryption algorithm must be either AES256 or aws:kms."
   }
 }
 
 variable "kms_key_id" {
-  description = "KMS key ID for server-side encryption (required if encryption_algorithm is 'aws:kms')"
+  description = "KMS key ID for encryption (required if using aws:kms)"
   type        = string
   default     = null
   
@@ -96,254 +68,129 @@ variable "kms_key_id" {
     condition = var.encryption_algorithm != "aws:kms" || (
       var.kms_key_id != null && can(regex("^arn:aws:kms:", var.kms_key_id))
     )
-    error_message = "KMS key ID must be provided and be a valid KMS key ARN when using 'aws:kms' encryption."
+    error_message = "KMS key ID must be provided and be a valid ARN when using aws:kms encryption."
   }
 }
 
-# =============================================================================
-# MONITORING AND ALERTING VARIABLES
-# =============================================================================
-
-variable "enable_email_alerts" {
-  description = "Enable email alerts for security events"
-  type        = bool
-  default     = true
-}
-
-variable "security_team_email" {
-  description = "Email address for security team alerts"
-  type        = string
-  default     = "security@chimera-core.com"
-  
-  validation {
-    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.security_team_email))
-    error_message = "Security team email must be a valid email address."
-  }
-}
-
-variable "enable_slack_alerts" {
-  description = "Enable Slack alerts for security events"
-  type        = bool
-  default     = false
-}
-
-variable "slack_webhook_url" {
-  description = "Slack webhook URL for security alerts"
-  type        = string
-  default     = ""
-  sensitive   = true
-  
-  validation {
-    condition = !var.enable_slack_alerts || (
-      var.slack_webhook_url != "" && can(regex("^https://hooks.slack.com/", var.slack_webhook_url))
-    )
-    error_message = "Slack webhook URL must be provided and be a valid Slack webhook URL when Slack alerts are enabled."
-  }
-}
-
-variable "log_retention_days" {
-  description = "Number of days to retain CloudWatch logs"
-  type        = number
-  default     = 90
-  
-  validation {
-    condition     = var.log_retention_days >= 1 && var.log_retention_days <= 3653
-    error_message = "Log retention days must be between 1 and 3653."
-  }
-}
-
-# =============================================================================
-# DATA LIFECYCLE VARIABLES
-# =============================================================================
-
-variable "pii_retention_days" {
-  description = "Number of days to retain PII data"
-  type        = number
-  default     = 2555  # 7 years
-  
-  validation {
-    condition     = var.pii_retention_days >= 365 && var.pii_retention_days <= 3650
-    error_message = "PII retention days must be between 365 and 3650 days."
-  }
-}
-
-variable "general_data_retention_days" {
-  description = "Number of days to retain general data"
-  type        = number
-  default     = 1095  # 3 years
-  
-  validation {
-    condition     = var.general_data_retention_days >= 30 && var.general_data_retention_days <= 1825
-    error_message = "General data retention days must be between 30 and 1825 days."
-  }
-}
-
-variable "noncurrent_version_retention_days" {
+variable "data_retention_days" {
   description = "Number of days to retain noncurrent versions"
   type        = number
   default     = 30
   
   validation {
-    condition     = var.noncurrent_version_retention_days >= 1 && var.noncurrent_version_retention_days <= 365
-    error_message = "Noncurrent version retention days must be between 1 and 365 days."
+    condition     = var.data_retention_days >= 1 && var.data_retention_days <= 3650
+    error_message = "Data retention days must be between 1 and 3650."
   }
 }
 
-variable "incomplete_multipart_upload_days" {
-  description = "Number of days after which incomplete multipart uploads are aborted"
-  type        = number
-  default     = 7
-  
-  validation {
-    condition     = var.incomplete_multipart_upload_days >= 1 && var.incomplete_multipart_upload_days <= 30
-    error_message = "Incomplete multipart upload days must be between 1 and 30 days."
-  }
-}
-
-# =============================================================================
-# COMPLIANCE AND TAGGING VARIABLES
-# =============================================================================
-
-variable "compliance_frameworks" {
-  description = "List of compliance frameworks this remediation addresses"
-  type        = list(string)
-  default = [
-    "PCI-DSS",
-    "CIS-AWS",
-    "CSA-CCM",
-    "NIST-CSF"
-  ]
-  
-  validation {
-    condition = alltrue([
-      for framework in var.compliance_frameworks : contains([
-        "PCI-DSS", "CIS-AWS", "CSA-CCM", "NIST-CSF", "HIPAA", "SOC2", "ISO27001"
-      ], framework)
-    ])
-    error_message = "Compliance framework must be one of: PCI-DSS, CIS-AWS, CSA-CCM, NIST-CSF, HIPAA, SOC2, ISO27001."
-  }
-}
-
-variable "data_classification" {
-  description = "Data classification level"
-  type        = string
-  default     = "PII"
-  
-  validation {
-    condition     = contains(["PII", "PHI", "PCI", "CONFIDENTIAL", "INTERNAL", "PUBLIC"], var.data_classification)
-    error_message = "Data classification must be one of: PII, PHI, PCI, CONFIDENTIAL, INTERNAL, PUBLIC."
-  }
-}
-
-variable "business_unit" {
-  description = "Business unit responsible for the data"
-  type        = string
-  default     = "Security"
-  
-  validation {
-    condition     = length(var.business_unit) >= 2 && length(var.business_unit) <= 50
-    error_message = "Business unit must be between 2 and 50 characters."
-  }
-}
-
-variable "cost_center" {
-  description = "Cost center for resource billing"
-  type        = string
-  default     = "SEC-001"
-  
-  validation {
-    condition     = can(regex("^[A-Z0-9-]+$", var.cost_center))
-    error_message = "Cost center must contain only uppercase letters, numbers, and hyphens."
-  }
-}
-
-# =============================================================================
-# ADVANCED CONFIGURATION VARIABLES
-# =============================================================================
-
-variable "enable_cross_account_access" {
-  description = "Enable cross-account access to the bucket"
-  type        = bool
-  default     = false
-}
-
-variable "cross_account_roles" {
-  description = "List of cross-account role ARNs for bucket access"
+variable "alert_emails" {
+  description = "List of email addresses for security alerts"
   type        = list(string)
   default     = []
   
   validation {
-    condition = !var.enable_cross_account_access || (
-      length(var.cross_account_roles) > 0 && alltrue([
-        for role in var.cross_account_roles : can(regex("^arn:aws:iam::[0-9]{12}:role/", role))
-      ])
-    )
-    error_message = "Cross-account roles must be provided and be valid IAM role ARNs when cross-account access is enabled."
+    condition = alltrue([
+      for email in var.alert_emails : can(regex("^[^@]+@[^@]+\\.[^@]+$", email))
+    ])
+    error_message = "All alert emails must be valid email addresses."
   }
 }
 
-variable "enable_bucket_key" {
-  description = "Enable S3 bucket key for encryption performance"
+variable "bucket_owner" {
+  description = "Owner/team responsible for the bucket"
+  type        = string
+  default     = "security-team"
+  
+  validation {
+    condition     = length(var.bucket_owner) >= 3 && length(var.bucket_owner) <= 50
+    error_message = "Bucket owner must be between 3 and 50 characters."
+  }
+}
+
+variable "cost_center" {
+  description = "Cost center for billing purposes"
+  type        = string
+  default     = "security"
+  
+  validation {
+    condition     = length(var.cost_center) >= 2 && length(var.cost_center) <= 20
+    error_message = "Cost center must be between 2 and 20 characters."
+  }
+}
+
+variable "common_tags" {
+  description = "Common tags to apply to all resources"
+  type        = map(string)
+  default = {
+    Project     = "Chimera-Core"
+    Purpose     = "S3-Security-Remediation"
+    ManagedBy   = "Terraform"
+    Compliance  = "PCI-DSS"
+    DataType    = "PII"
+    Criticality = "Critical"
+  }
+}
+
+variable "enable_monitoring" {
+  description = "Enable CloudWatch monitoring and alerts"
   type        = bool
   default     = true
 }
 
-variable "enable_intelligent_tiering" {
-  description = "Enable S3 Intelligent Tiering for cost optimization"
+variable "enable_access_logging" {
+  description = "Enable S3 access logging"
+  type        = bool
+  default     = true
+}
+
+variable "enable_versioning" {
+  description = "Enable S3 versioning"
+  type        = bool
+  default     = true
+}
+
+variable "enable_lifecycle_policies" {
+  description = "Enable S3 lifecycle policies"
+  type        = bool
+  default     = true
+}
+
+variable "aws_region" {
+  description = "AWS region for resources"
+  type        = string
+  default     = "us-east-1"
+  
+  validation {
+    condition     = can(regex("^[a-z]{2}-[a-z]+-[0-9]+$", var.aws_region))
+    error_message = "AWS region must be in valid format (e.g., us-east-1)."
+  }
+}
+
+variable "force_destroy" {
+  description = "Force destroy resources (use with caution)"
   type        = bool
   default     = false
 }
 
-variable "enable_object_lock" {
-  description = "Enable S3 Object Lock for compliance requirements"
-  type        = bool
-  default     = false
-}
-
-variable "object_lock_retention_days" {
-  description = "Object lock retention period in days"
-  type        = number
-  default     = 2555  # 7 years for PII
-  
-  validation {
-    condition     = !var.enable_object_lock || (var.object_lock_retention_days >= 1 && var.object_lock_retention_days <= 36500)
-    error_message = "Object lock retention days must be between 1 and 36500 when object lock is enabled."
+variable "emergency_contacts" {
+  description = "Emergency contact information for security incidents"
+  type = object({
+    primary_contact = string
+    backup_contact  = string
+    escalation_time = number
+  })
+  default = {
+    primary_contact = "security@company.com"
+    backup_contact  = "oncall@company.com"
+    escalation_time = 30
   }
-}
-
-# =============================================================================
-# EMERGENCY CONTACT VARIABLES
-# =============================================================================
-
-variable "emergency_contact_name" {
-  description = "Name of the emergency contact person"
-  type        = string
-  default     = "Security Team Lead"
   
   validation {
-    condition     = length(var.emergency_contact_name) >= 3 && length(var.emergency_contact_name) <= 100
-    error_message = "Emergency contact name must be between 3 and 100 characters."
-  }
-}
-
-variable "emergency_contact_phone" {
-  description = "Phone number for emergency contact"
-  type        = string
-  default     = "+1-555-0123"
-  
-  validation {
-    condition     = can(regex("^\\+[1-9]\\d{1,14}$", var.emergency_contact_phone))
-    error_message = "Emergency contact phone must be a valid international phone number."
-  }
-}
-
-variable "emergency_contact_email" {
-  description = "Email address for emergency contact"
-  type        = string
-  default     = "emergency@chimera-core.com"
-  
-  validation {
-    condition     = can(regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", var.emergency_contact_email))
-    error_message = "Emergency contact email must be a valid email address."
+    condition = alltrue([
+      can(regex("^[^@]+@[^@]+\\.[^@]+$", var.emergency_contacts.primary_contact)),
+      can(regex("^[^@]+@[^@]+\\.[^@]+$", var.emergency_contacts.backup_contact)),
+      var.emergency_contacts.escalation_time >= 5 && var.emergency_contacts.escalation_time <= 120
+    ])
+    error_message = "Emergency contacts must have valid email addresses and escalation time between 5-120 minutes."
   }
 }
