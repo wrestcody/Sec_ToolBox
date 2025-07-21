@@ -1,0 +1,305 @@
+# Cloud Compliance Evidence Scraper - Controls Mapping Configuration
+# This file maps specific compliance controls to AWS API calls and evidence collection methods
+
+# Metadata
+metadata:
+  version: "1.0"
+  description: "Controls mapping for Cloud Compliance Evidence Scraper"
+  last_updated: "2024-01-01"
+  author: "Cloud Sentinel Toolkit"
+
+# Global settings
+settings:
+  default_region: "us-east-1"
+  evidence_retention_days: 90
+  sensitive_data_handling: "aggregate_only"  # Only collect aggregate counts, not raw data
+
+# Compliance frameworks and controls
+controls:
+  # SOC 2 Controls
+  - id: "CC6.1"
+    name: "Logical access is restricted to authorized users"
+    framework: "SOC 2"
+    category: "CC - Control Activities"
+    type: "iam"
+    description: "Verify that logical access is properly restricted through IAM policies, MFA, and access controls"
+    checks:
+      - "mfa_root_check"
+      - "password_policy_check"
+      - "admin_users_check"
+    evidence_requirements:
+      - "Root account MFA status"
+      - "IAM password policy configuration"
+      - "List of users with administrative privileges"
+    risk_level: "High"
+    remediation_guidance: "Enable MFA for root account, configure strong password policy, review admin users"
+
+  - id: "CC6.2"
+    name: "Access to systems and data is restricted to authorized personnel"
+    framework: "SOC 2"
+    category: "CC - Control Activities"
+    type: "iam"
+    description: "Ensure access to systems and data is properly controlled and monitored"
+    checks:
+      - "admin_users_check"
+      - "password_policy_check"
+    evidence_requirements:
+      - "List of administrative users"
+      - "Password policy configuration"
+    risk_level: "Medium"
+    remediation_guidance: "Review and limit administrative access, enforce strong password policies"
+
+  # ISO 27001 Controls
+  - id: "A.12.4.1"
+    name: "Event logging and monitoring"
+    framework: "ISO 27001"
+    category: "A.12 - Operations Security"
+    type: "cloudtrail"
+    description: "Verify that comprehensive logging and monitoring is in place for security events"
+    checks:
+      - "trail_status_check"
+      - "logging_status_check"
+    evidence_requirements:
+      - "CloudTrail trail configuration"
+      - "Logging status and delivery information"
+      - "Multi-region trail status"
+    risk_level: "High"
+    remediation_guidance: "Enable CloudTrail logging, configure multi-region trails, ensure log delivery"
+
+  - id: "A.13.2.1"
+    name: "Data in transit protection"
+    framework: "ISO 27001"
+    category: "A.13 - Communications Security"
+    type: "s3"
+    description: "Ensure data in transit is protected through encryption and secure protocols"
+    checks:
+      - "bucket_encryption_check"
+      - "bucket_versioning_check"
+    evidence_requirements:
+      - "S3 bucket encryption status"
+      - "Versioning configuration"
+    risk_level: "Medium"
+    remediation_guidance: "Enable default encryption for S3 buckets, enable versioning for critical data"
+
+  # PCI DSS Controls
+  - id: "3.4.1"
+    name: "Data at rest encryption"
+    framework: "PCI DSS"
+    category: "Requirement 3 - Protect Stored Cardholder Data"
+    type: "s3"
+    description: "Verify that cardholder data at rest is protected through encryption"
+    checks:
+      - "bucket_encryption_check"
+    evidence_requirements:
+      - "S3 bucket encryption configuration"
+      - "Encryption algorithm details"
+    risk_level: "Critical"
+    remediation_guidance: "Enable server-side encryption for all S3 buckets containing sensitive data"
+
+  - id: "7.1.1"
+    name: "Access control based on job function"
+    framework: "PCI DSS"
+    category: "Requirement 7 - Restrict Access to Cardholder Data"
+    type: "iam"
+    description: "Ensure access to cardholder data is restricted based on job function"
+    checks:
+      - "admin_users_check"
+      - "password_policy_check"
+    evidence_requirements:
+      - "List of users with administrative access"
+      - "Password policy configuration"
+    risk_level: "Critical"
+    remediation_guidance: "Implement least privilege access, review admin users regularly"
+
+  # NIST Cybersecurity Framework
+  - id: "PR.AC-1"
+    name: "Identities and credentials are managed"
+    framework: "NIST CSF"
+    category: "PR.AC - Identity Management and Access Control"
+    type: "iam"
+    description: "Verify that identities and credentials are properly managed"
+    checks:
+      - "mfa_root_check"
+      - "password_policy_check"
+      - "admin_users_check"
+    evidence_requirements:
+      - "Root account MFA status"
+      - "Password policy configuration"
+      - "Administrative user list"
+    risk_level: "High"
+    remediation_guidance: "Enable MFA, implement strong password policies, review access regularly"
+
+  - id: "DE.CM-1"
+    name: "The network is monitored to detect potential cybersecurity events"
+    framework: "NIST CSF"
+    category: "DE.CM - Security Continuous Monitoring"
+    type: "cloudtrail"
+    description: "Verify that network and system activities are monitored for security events"
+    checks:
+      - "trail_status_check"
+      - "logging_status_check"
+    evidence_requirements:
+      - "CloudTrail configuration"
+      - "Logging status"
+      - "Multi-region coverage"
+    risk_level: "High"
+    remediation_guidance: "Enable comprehensive CloudTrail logging, monitor log delivery"
+
+  # Additional AWS-specific controls
+  - id: "AWS-RDS-001"
+    name: "RDS encryption at rest"
+    framework: "AWS Best Practices"
+    category: "Data Protection"
+    type: "rds"
+    description: "Verify that RDS instances are encrypted at rest"
+    checks:
+      - "rds_encryption_check"
+    evidence_requirements:
+      - "RDS instance encryption status"
+      - "KMS key usage"
+    risk_level: "High"
+    remediation_guidance: "Enable encryption for all RDS instances, use customer-managed KMS keys"
+
+  - id: "AWS-S3-001"
+    name: "S3 bucket security configuration"
+    framework: "AWS Best Practices"
+    category: "Data Protection"
+    type: "s3"
+    description: "Verify S3 bucket security configurations including encryption and versioning"
+    checks:
+      - "bucket_encryption_check"
+      - "bucket_versioning_check"
+    evidence_requirements:
+      - "S3 bucket encryption status"
+      - "Versioning configuration"
+    risk_level: "Medium"
+    remediation_guidance: "Enable default encryption and versioning for all S3 buckets"
+
+# Evidence collection methods
+evidence_methods:
+  iam:
+    - name: "mfa_root_check"
+      description: "Check if MFA is enabled for the root account"
+      api_calls:
+        - "iam:GetAccountSummary"
+      data_collected:
+        - "AccountMFAEnabled"
+      sensitive_data: false
+
+    - name: "password_policy_check"
+      description: "Check IAM password policy configuration"
+      api_calls:
+        - "iam:GetAccountPasswordPolicy"
+      data_collected:
+        - "MinimumPasswordLength"
+        - "RequireSymbols"
+        - "RequireNumbers"
+        - "RequireUppercaseCharacters"
+        - "RequireLowercaseCharacters"
+        - "ExpirePasswords"
+        - "MaxPasswordAge"
+      sensitive_data: false
+
+    - name: "admin_users_check"
+      description: "Identify users with administrative privileges"
+      api_calls:
+        - "iam:ListUsers"
+        - "iam:ListAttachedUserPolicies"
+      data_collected:
+        - "User names with admin policies"
+        - "Policy names attached"
+      sensitive_data: true  # Only collect aggregate counts
+
+  s3:
+    - name: "bucket_encryption_check"
+      description: "Check S3 bucket encryption configuration"
+      api_calls:
+        - "s3:ListBuckets"
+        - "s3:GetBucketEncryption"
+      data_collected:
+        - "Bucket names"
+        - "Encryption status"
+        - "Encryption algorithm"
+      sensitive_data: false
+
+    - name: "bucket_versioning_check"
+      description: "Check S3 bucket versioning configuration"
+      api_calls:
+        - "s3:ListBuckets"
+        - "s3:GetBucketVersioning"
+      data_collected:
+        - "Bucket names"
+        - "Versioning status"
+      sensitive_data: false
+
+  cloudtrail:
+    - name: "trail_status_check"
+      description: "Check CloudTrail trail configuration"
+      api_calls:
+        - "cloudtrail:ListTrails"
+        - "cloudtrail:GetTrail"
+      data_collected:
+        - "Trail names"
+        - "S3 bucket configuration"
+        - "Multi-region status"
+        - "Log file validation"
+      sensitive_data: false
+
+    - name: "logging_status_check"
+      description: "Check CloudTrail logging status"
+      api_calls:
+        - "cloudtrail:ListTrails"
+        - "cloudtrail:GetTrailStatus"
+      data_collected:
+        - "Logging status"
+        - "Latest delivery time"
+        - "Latest notification time"
+      sensitive_data: false
+
+  rds:
+    - name: "rds_encryption_check"
+      description: "Check RDS instance encryption status"
+      api_calls:
+        - "rds:DescribeDBInstances"
+      data_collected:
+        - "Instance identifiers"
+        - "Encryption status"
+        - "KMS key IDs"
+        - "Engine types"
+      sensitive_data: false
+
+# Output formats and templates
+output_formats:
+  json:
+    enabled: true
+    include_metadata: true
+    include_raw_data: false  # For security, don't include raw API responses
+
+  markdown:
+    enabled: true
+    template: "default"
+    include_summary: true
+    include_details: true
+
+  csv:
+    enabled: true
+    include_headers: true
+    aggregate_sensitive_data: true
+
+# Security and privacy settings
+security:
+  data_handling:
+    sensitive_data_aggregation: true
+    no_raw_logs: true
+    no_credentials_in_output: true
+    no_ip_addresses: true
+  
+  access_control:
+    read_only_operations: true
+    no_configuration_changes: true
+    no_data_modification: true
+
+  audit_trail:
+    log_all_operations: true
+    log_data_access: false  # Don't log what data was accessed
+    log_errors_only: false

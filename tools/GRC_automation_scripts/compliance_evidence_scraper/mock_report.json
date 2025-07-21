@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "generated_at": "2025-07-20T23:52:50.411892+00:00",
+    "region": "us-east-1",
+    "total_controls_checked": 3,
+    "note": "This is mock data for demonstration purposes"
+  },
+  "evidence": [
+    {
+      "control_id": "CC6.1",
+      "control_name": "Logical access is restricted to authorized users",
+      "framework": "SOC 2",
+      "category": "CC - Control Activities",
+      "evidence_type": "iam",
+      "timestamp": "2025-07-20T23:52:50.411836+00:00",
+      "risk_level": "High",
+      "compliance_status": "Partially Compliant",
+      "findings": [
+        "\u2705 Root account MFA is enabled",
+        "\u2705 Minimum password length is 12+ characters",
+        "\u2705 Password policy requires symbols",
+        "\u2705 Password policy requires numbers",
+        "\u2705 Password policy requires uppercase characters",
+        "\u2705 Password policy requires lowercase characters",
+        "\u2705 Password policy requires password expiration",
+        "\u2705 Password expiration is set to 90 days",
+        "\u26a0\ufe0f 3 users have AdministratorAccess policy"
+      ],
+      "recommendations": [
+        "Review and reduce the number of administrative users"
+      ],
+      "data": {
+        "root_mfa_enabled": true,
+        "root_mfa_status": "Enabled",
+        "password_policy": {
+          "MinimumPasswordLength": 12,
+          "RequireSymbols": true,
+          "RequireNumbers": true,
+          "RequireUppercaseCharacters": true,
+          "RequireLowercaseCharacters": true,
+          "ExpirePasswords": true,
+          "MaxPasswordAge": 90
+        },
+        "admin_users_count": 3,
+        "admin_users": [
+          {
+            "username": "admin-user-1",
+            "policy": "AdministratorAccess"
+          },
+          {
+            "username": "admin-user-2",
+            "policy": "AdministratorAccess"
+          },
+          {
+            "username": "admin-user-3",
+            "policy": "AdministratorAccess"
+          }
+        ]
+      }
+    },
+    {
+      "control_id": "CC6.2",
+      "control_name": "Access to systems and data is restricted to authorized personnel",
+      "framework": "SOC 2",
+      "category": "CC - Control Activities",
+      "evidence_type": "iam",
+      "timestamp": "2025-07-20T23:52:50.411870+00:00",
+      "risk_level": "Medium",
+      "compliance_status": "Partially Compliant",
+      "findings": [
+        "\u2705 Root account MFA is enabled",
+        "\u2705 Minimum password length is 12+ characters",
+        "\u2705 Password policy requires symbols",
+        "\u2705 Password policy requires numbers",
+        "\u2705 Password policy requires uppercase characters",
+        "\u2705 Password policy requires lowercase characters",
+        "\u2705 Password policy requires password expiration",
+        "\u2705 Password expiration is set to 90 days",
+        "\u26a0\ufe0f 3 users have AdministratorAccess policy"
+      ],
+      "recommendations": [
+        "Review and reduce the number of administrative users"
+      ],
+      "data": {
+        "root_mfa_enabled": true,
+        "root_mfa_status": "Enabled",
+        "password_policy": {
+          "MinimumPasswordLength": 12,
+          "RequireSymbols": true,
+          "RequireNumbers": true,
+          "RequireUppercaseCharacters": true,
+          "RequireLowercaseCharacters": true,
+          "ExpirePasswords": true,
+          "MaxPasswordAge": 90
+        },
+        "admin_users_count": 3,
+        "admin_users": [
+          {
+            "username": "admin-user-1",
+            "policy": "AdministratorAccess"
+          },
+          {
+            "username": "admin-user-2",
+            "policy": "AdministratorAccess"
+          },
+          {
+            "username": "admin-user-3",
+            "policy": "AdministratorAccess"
+          }
+        ]
+      }
+    },
+    {
+      "control_id": "A.12.4.1",
+      "control_name": "Event logging and monitoring",
+      "framework": "ISO 27001",
+      "category": "A.12 - Operations Security",
+      "evidence_type": "cloudtrail",
+      "timestamp": "2025-07-20T23:52:50.411878+00:00",
+      "risk_level": "High",
+      "compliance_status": "Partially Compliant",
+      "findings": [
+        "\u2705 2 CloudTrail trail(s) configured",
+        "\u2705 1 multi-region trail(s) configured",
+        "\u26a0\ufe0f 1 trail(s) have log file validation enabled",
+        "\u2705 All 2 CloudTrail trail(s) are actively logging"
+      ],
+      "recommendations": [
+        "Enable log file validation for CloudTrail trails"
+      ],
+      "data": {
+        "total_trails": 2,
+        "multi_region_trails": 1,
+        "trails": [
+          {
+            "name": "main-trail",
+            "s3_bucket": "cloudtrail-logs-bucket",
+            "log_file_validation_enabled": true,
+            "is_multi_region_trail": true,
+            "include_global_services": true
+          },
+          {
+            "name": "regional-trail",
+            "s3_bucket": "regional-logs-bucket",
+            "log_file_validation_enabled": false,
+            "is_multi_region_trail": false,
+            "include_global_services": false
+          }
+        ],
+        "logging_status": {
+          "main-trail": {
+            "is_logging": true,
+            "latest_delivery_time": "2024-01-15T10:30:00Z",
+            "latest_notification_time": "2024-01-15T10:30:00Z"
+          },
+          "regional-trail": {
+            "is_logging": true,
+            "latest_delivery_time": "2024-01-15T10:25:00Z",
+            "latest_notification_time": "2024-01-15T10:25:00Z"
+          }
+        }
+      }
+    }
+  ]
+}
