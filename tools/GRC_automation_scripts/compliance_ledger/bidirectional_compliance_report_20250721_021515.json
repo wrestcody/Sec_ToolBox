@@ -1,0 +1,66 @@
+{
+  "report_metadata": {
+    "generated_at": "2025-07-21T02:15:15.216963+00:00",
+    "total_evidence_bundles": 2,
+    "total_recommendations": 2,
+    "ai_analysis_version": "1.0.0"
+  },
+  "compliance_summary": {
+    "frameworks_covered": [],
+    "high_risk_violations": 0,
+    "medium_risk_violations": 0,
+    "low_risk_violations": 0,
+    "overall_risk_score": 0.8500000000000001,
+    "total_recommendations": 2
+  },
+  "evidence_analysis": [
+    {
+      "control_id": "NIST_CSF_PR.DS-1",
+      "resource_type": "s3_bucket",
+      "violations_detected": true,
+      "risk_score": 0.9,
+      "compliance_impact": [
+        "PCI_DSS_3.4",
+        "SOC2_CC6.1",
+        "NIST_CSF_PR.DS-1"
+      ]
+    },
+    {
+      "control_id": "NIST_CSF_PR.AC-4",
+      "resource_type": "iam_user",
+      "violations_detected": true,
+      "risk_score": 0.8,
+      "compliance_impact": [
+        "NIST_CSF_PR.AC-4",
+        "SOC2_CC6.1",
+        "PCI_DSS_8.1"
+      ]
+    }
+  ],
+  "policy_recommendations": [
+    {
+      "control_id": "NIST_CSF_PR.DS-1",
+      "confidence_score": 0.9,
+      "reasoning": "Detected s3_encryption_violation violation in s3_bucket resources. Risk score: 0.9",
+      "risk_assessment": "HIGH",
+      "implementation_priority": "HIGH",
+      "framework_mappings": [
+        "NIST_CSF",
+        "PCI_DSS"
+      ]
+    },
+    {
+      "control_id": "NIST_CSF_PR.AC-4",
+      "confidence_score": 0.8,
+      "reasoning": "Detected iam_mfa_violation violation in iam_user resources. Risk score: 0.8",
+      "risk_assessment": "HIGH",
+      "implementation_priority": "MEDIUM",
+      "framework_mappings": [
+        "NIST_CSF",
+        "SOC2"
+      ]
+    }
+  ],
+  "framework_mappings": {},
+  "risk_assessment": {}
+}
