@@ -110,14 +110,13 @@ jobs:
         python3 test_tools.py || echo "Comprehensive test script completed with warnings"
         
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: security-reports
         path: |
           bandit-report.json
           bandit-report.txt
-          safety-report.json
           safety-report.txt
 
   code-quality:
