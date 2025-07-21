@@ -1,8 +1,45 @@
+# Core Framework
 Flask==2.3.3
 Werkzeug==2.3.7
 python-dateutil==2.8.2
+
+# Security & Authentication
 bcrypt==4.0.1
 cryptography==41.0.7
 pyotp==2.8.0
 python-json-logger==2.0.7
+PyJWT==2.8.0
+
+# Production Server
 gunicorn==21.2.0
+
+# AWS Integration
+boto3==1.34.0
+botocore==1.34.0
+
+# HTTP Requests
+requests==2.31.0
+urllib3==2.0.7
+
+# Monitoring & Observability
+elasticsearch==8.11.0
+prometheus-client==0.19.0
+datadog==0.44.0
+
+# Slack Integration
+slack-sdk==3.26.1
+
+# Jira Integration
+jira==3.5.1
+
+# PagerDuty Integration
+pagerduty==0.2.0
+
+# HashiCorp Vault
+hvac==2.0.0
+
+# LDAP Integration
+ldap3==2.9.1
+
+# Additional Security
+python-dotenv==1.0.0
