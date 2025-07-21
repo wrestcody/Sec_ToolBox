@@ -1,0 +1,60 @@
+# Example AWS IAM MFA Compliance Policy using Direct API Calls
+# This policy demonstrates how to use direct AWS API calls for evidence collection
+# Control: NIST CSF PR.AC-4 - Access control
+# Framework: NIST Cybersecurity Framework
+
+- control_id: "NIST_CSF_PR.AC-4"
+  description: "Access control - IAM user MFA compliance"
+  cloud_provider: "aws"
+  resource_type: "iam_user"
+  evidence_collection_method:
+    source_type: "api_call"
+    service: "iam"
+    api_call: "get_credential_report"
+    parameters: {}  # No parameters needed for credential report
+  validation_logic:
+    description: "IAM users must have MFA enabled"
+    expected_result: "All IAM users should have MFA devices configured"
+
+- control_id: "SOC2_CC6.1"
+  description: "Logical and physical access controls - IAM user access keys"
+  cloud_provider: "aws"
+  resource_type: "iam_user"
+  evidence_collection_method:
+    source_type: "api_call"
+    service: "iam"
+    api_call: "list_users"
+    parameters: {}
+
+- control_id: "PCI_DSS_8.1"
+  description: "Assign unique ID to each person - IAM user management"
+  cloud_provider: "aws"
+  resource_type: "iam_user"
+  evidence_collection_method:
+    source_type: "api_call"
+    service: "iam"
+    api_call: "list_access_keys"
+    parameters:
+      UserName: "{{user_name}}"  # Placeholder for dynamic user iteration
+
+- control_id: "ISO_27001_A.9.2.3"
+  description: "Access control - IAM role permissions"
+  cloud_provider: "aws"
+  resource_type: "iam_role"
+  evidence_collection_method:
+    source_type: "api_call"
+    service: "iam"
+    api_call: "list_roles"
+    parameters: {}
+
+- control_id: "HIPAA_164.312.a.1"
+  description: "Access control - IAM policy review"
+  cloud_provider: "aws"
+  resource_type: "iam_policy"
+  evidence_collection_method:
+    source_type: "api_call"
+    service: "iam"
+    api_call: "list_policies"
+    parameters:
+      Scope: "Local"
+      MaxItems: 100
