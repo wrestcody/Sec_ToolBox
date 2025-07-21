@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """
-Cloud IAM Behavioral Anomaly Detector
+Cloud IAM Behavioral Anomaly Detector with Guardian's Mandate Integration
 
 A CLI tool that analyzes AWS CloudTrail logs for unusual IAM activity patterns
 that could indicate a compromised identity or privilege escalation.
 
-This tool is designed for audit evidence and compliance reporting purposes.
+This tool implements The Guardian's Mandate for unassailable digital evidence
+integrity and unbreakable chain of custody.
+
+Core Features:
+- Cryptographic tamper-evident logging of all analysis activities
+- Immutable audit trails with blockchain-style verification
+- Automated chain of custody for all findings and evidence
+- Forensic-ready export capabilities with cryptographic proofs
+- Compliance alignment with SOC2, ISO27001, NIST, and CIS frameworks
 """
 
 import argparse
@@ -17,33 +25,91 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Set, Any, Optional
 from collections import defaultdict
 import ipaddress
+import uuid
+import hashlib
+import hmac
+import base64
+from pathlib import Path
+
+# Import The Guardian's Mandate framework
+try:
+    from guardians_mandate import (
+        GuardianLedger, 
+        EvidenceLevel, 
+        AuditEventType,
+        record_guardian_event,
+        verify_guardian_integrity,
+        export_guardian_forensic_data
+    )
+    GUARDIAN_MANDATE_AVAILABLE = True
+except ImportError:
+    print("Warning: Guardian's Mandate framework not available. Running in legacy mode.")
+    GUARDIAN_MANDATE_AVAILABLE = False
 
 
 class IAMAnomalyDetector:
     """Main class for detecting IAM behavioral anomalies with audit capabilities."""
     
-    def __init__(self, baseline_days: int = 30):
+    def __init__(self, baseline_days: int = 30, enable_guardian_mandate: bool = True):
         """
-        Initialize the anomaly detector.
+        Initialize the anomaly detector with Guardian's Mandate integration.
         
         Args:
             baseline_days: Number of days to use for building user baselines
+            enable_guardian_mandate: Enable Guardian's Mandate integrity features
         """
         self.baseline_days = baseline_days
         self.user_baselines = {}
         self.anomalies = []
+        self.enable_guardian_mandate = enable_guardian_mandate and GUARDIAN_MANDATE_AVAILABLE
+        
+        # Initialize Guardian's Mandate components
+        if self.enable_guardian_mandate:
+            self.guardian_ledger = GuardianLedger(ledger_path="iam_anomaly_guardian_ledger")
+            self.analysis_session_id = str(uuid.uuid4())
+            self.guardian_metadata = {
+                'analysis_session_id': self.analysis_session_id,
+                'guardian_mandate_version': '1.0.0',
+                'evidence_integrity_level': EvidenceLevel.CRITICAL.value,
+                'chain_of_custody_enabled': True,
+                'cryptographic_verification_enabled': True
+            }
+        else:
+            self.guardian_ledger = None
+            self.analysis_session_id = None
+            self.guardian_metadata = {}
+        
         self.audit_metadata = {
             'analysis_start_time': datetime.now().isoformat(),
-            'tool_version': '1.0.0',
-            'analysis_parameters': {},
-            'compliance_frameworks': {
-                'SOC2': ['CC6.1', 'CC6.2', 'CC6.3'],
-                'ISO27001': ['A.9.2.1', 'A.9.2.2', 'A.9.2.3'],
-                'NIST': ['AC-2', 'AC-3', 'AC-6'],
-                'CIS': ['1.1', '1.2', '1.3']
+            'tool_version': '2.0.0',
+            'analysis_parameters': {
+                'baseline_days': baseline_days,
+                'guardian_mandate_enabled': self.enable_guardian_mandate
             },
-            'audit_trail': []
+            'compliance_frameworks': {
+                'SOC2': ['CC6.1', 'CC6.2', 'CC6.3', 'CC7.1', 'CC7.2', 'CC7.3'],
+                'ISO27001': ['A.9.2.1', 'A.9.2.2', 'A.9.2.3', 'A.12.4.1', 'A.12.4.3'],
+                'NIST': ['AC-2', 'AC-3', 'AC-6', 'AU-2', 'AU-3', 'AU-6'],
+                'CIS': ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6']
+            },
+            'audit_trail': [],
+            'guardian_metadata': self.guardian_metadata
         }
+        
+        # Record analysis session start in Guardian Ledger
+        if self.enable_guardian_mandate:
+            self._record_guardian_event(
+                event_type=AuditEventType.SYSTEM_EVENT.value,
+                action="analysis_session_start",
+                resource="iam_anomaly_detector",
+                details={
+                    "session_id": self.analysis_session_id,
+                    "baseline_days": baseline_days,
+                    "guardian_mandate_enabled": True,
+                    "compliance_frameworks": list(self.audit_metadata['compliance_frameworks'].keys())
+                },
+                evidence_level=EvidenceLevel.CRITICAL
+            )
         
     def load_cloudtrail_logs(self, log_file: str) -> List[Dict[str, Any]]:
         """
@@ -80,6 +146,22 @@ class IAMAnomalyDetector:
             if invalid_logs > 0:
                 print(f"Warning: {invalid_logs} invalid log entries were skipped")
             
+            # Record log loading event in Guardian Ledger
+            if self.enable_guardian_mandate:
+                self._record_guardian_event(
+                    event_type=AuditEventType.DATA_ACCESS.value,
+                    action="load_cloudtrail_logs",
+                    resource=log_file,
+                    details={
+                        "total_logs": len(records),
+                        "validated_logs": len(validated_logs),
+                        "invalid_logs": invalid_logs,
+                        "file_size_bytes": os.path.getsize(log_file),
+                        "file_hash": self._compute_file_hash(log_file)
+                    },
+                    evidence_level=EvidenceLevel.CRITICAL
+                )
+            
             return validated_logs
                 
         except FileNotFoundError:
@@ -91,6 +173,26 @@ class IAMAnomalyDetector:
         except Exception as e:
             print(f"Error loading logs: {e}")
             sys.exit(1)
+    
+    def _compute_file_hash(self, file_path: str) -> str:
+        """
+        Compute SHA-256 hash of a file for integrity verification.
+        
+        Args:
+            file_path: Path to the file
+            
+        Returns:
+            SHA-256 hash of the file
+        """
+        try:
+            with open(file_path, 'rb') as f:
+                file_hash = hashlib.sha256()
+                for chunk in iter(lambda: f.read(4096), b""):
+                    file_hash.update(chunk)
+                return file_hash.hexdigest()
+        except Exception as e:
+            print(f"Warning: Could not compute file hash for {file_path}: {e}")
+            return "unknown"
     
     def _validate_log_entry(self, log: Dict[str, Any]) -> bool:
         """
@@ -128,7 +230,7 @@ class IAMAnomalyDetector:
     
     def _add_audit_event(self, event_type: str, details: Dict[str, Any]):
         """
-        Add an event to the audit trail.
+        Add an event to the audit trail with Guardian's Mandate integration.
         
         Args:
             event_type: Type of audit event
@@ -137,9 +239,70 @@ class IAMAnomalyDetector:
         audit_event = {
             'timestamp': datetime.now().isoformat(),
             'event_type': event_type,
-            'details': details
+            'details': details,
+            'guardian_session_id': self.analysis_session_id
         }
         self.audit_metadata['audit_trail'].append(audit_event)
+        
+        # Also record in Guardian Ledger if enabled
+        if self.enable_guardian_mandate:
+            self._record_guardian_event(
+                event_type=event_type,
+                action="audit_event",
+                resource="audit_trail",
+                details=details,
+                evidence_level=EvidenceLevel.HIGH
+            )
+    
+    def _record_guardian_event(self, 
+                              event_type: str,
+                              action: str,
+                              resource: str,
+                              details: Dict[str, Any],
+                              evidence_level: EvidenceLevel = EvidenceLevel.HIGH,
+                              parent_event_id: Optional[str] = None) -> Optional[str]:
+        """
+        Record an event in the Guardian Ledger with full integrity guarantees.
+        
+        Args:
+            event_type: Type of audit event
+            action: Action performed
+            resource: Resource accessed/modified
+            details: Event details
+            evidence_level: Evidence integrity level
+            parent_event_id: Parent event ID for chain of custody
+            
+        Returns:
+            Event ID if recorded, None otherwise
+        """
+        if not self.enable_guardian_mandate or not self.guardian_ledger:
+            return None
+        
+        try:
+            # Extract user information from details or use defaults
+            user_id = details.get('user_id', 'system')
+            session_id = details.get('session_id', self.analysis_session_id)
+            source_ip = details.get('source_ip', '127.0.0.1')
+            user_agent = details.get('user_agent', 'IAMAnomalyDetector/2.0.0')
+            
+            event_id = self.guardian_ledger.record_event(
+                event_type=event_type,
+                user_id=user_id,
+                session_id=session_id,
+                source_ip=source_ip,
+                user_agent=user_agent,
+                action=action,
+                resource=resource,
+                details=details,
+                evidence_level=evidence_level,
+                parent_event_id=parent_event_id
+            )
+            
+            return event_id
+            
+        except Exception as e:
+            print(f"Warning: Failed to record Guardian event: {e}")
+            return None
     
     def filter_logs_by_time_window(self, logs: List[Dict[str, Any]], 
                                   start_time: datetime, 
@@ -458,6 +621,49 @@ class IAMAnomalyDetector:
             except Exception as e:
                 print(f"Warning: Error processing log entry for anomaly detection: {e}")
                 continue
+        
+        # Record anomaly detection summary in Guardian Ledger
+        if self.enable_guardian_mandate and anomalies:
+            self._record_guardian_event(
+                event_type=AuditEventType.SECURITY_EVENT.value,
+                action="anomaly_detection_complete",
+                resource="cloudtrail_analysis",
+                details={
+                    "total_anomalies_detected": len(anomalies),
+                    "anomaly_types": list(set(a.get('anomaly_type', 'unknown') for a in anomalies)),
+                    "severity_distribution": {
+                        severity: len([a for a in anomalies if a.get('severity') == severity])
+                        for severity in ['critical', 'high', 'medium', 'low']
+                    },
+                    "users_affected": list(set(a.get('username', 'unknown') for a in anomalies)),
+                    "analysis_session_id": self.analysis_session_id,
+                    "detection_timestamp": datetime.now().isoformat()
+                },
+                evidence_level=EvidenceLevel.CRITICAL
+            )
+            
+            # Record each individual anomaly for chain of custody
+            for anomaly in anomalies:
+                self._record_guardian_event(
+                    event_type=AuditEventType.SECURITY_EVENT.value,
+                    action="anomaly_detected",
+                    resource=f"user:{anomaly.get('username', 'unknown')}",
+                    details={
+                        "anomaly_id": str(uuid.uuid4()),
+                        "anomaly_type": anomaly.get('anomaly_type'),
+                        "severity": anomaly.get('severity'),
+                        "username": anomaly.get('username'),
+                        "event_name": anomaly.get('event_name'),
+                        "source_ip": anomaly.get('source_ip'),
+                        "aws_region": anomaly.get('aws_region'),
+                        "description": anomaly.get('description'),
+                        "risk_score": anomaly.get('risk_score'),
+                        "compliance_impact": anomaly.get('compliance_impact', []),
+                        "evidence": anomaly.get('evidence', {}),
+                        "analysis_session_id": self.analysis_session_id
+                    },
+                    evidence_level=EvidenceLevel.CRITICAL
+                )
         
         return anomalies
     
@@ -932,6 +1138,51 @@ class IAMAnomalyDetector:
             "output_file": output_file,
             "severity_breakdown": dict(severity_counts) if anomalies else {}
         })
+        
+        # Guardian's Mandate: Integrity verification and forensic export
+        if self.enable_guardian_mandate:
+            print(f"\n🛡️  Guardian's Mandate: Digital Evidence Integrity")
+            print("=" * 50)
+            
+            # Verify ledger integrity
+            print("🔍 Verifying cryptographic integrity...")
+            integrity_result = self.guardian_ledger.verify_integrity()
+            
+            if integrity_result['verified']:
+                print(f"✅ Integrity verification: PASSED")
+                print(f"   Verified blocks: {integrity_result['verified_blocks']}/{integrity_result['total_blocks']}")
+                print(f"   Chain hashes: {len(integrity_result['chain_hashes'])}")
+                print(f"   Timestamp range: {integrity_result['timestamp_range']['start']} to {integrity_result['timestamp_range']['end']}")
+            else:
+                print(f"❌ Integrity verification: FAILED")
+                print(f"   Errors: {len(integrity_result['errors'])}")
+                for error in integrity_result['errors']:
+                    print(f"     - {error}")
+            
+            # Export forensic data
+            print("\n📋 Exporting forensic data...")
+            forensic_file = f"guardian_forensic_{self.analysis_session_id}.json"
+            export_path = self.guardian_ledger.export_forensic_data(forensic_file)
+            print(f"✅ Forensic data exported to: {export_path}")
+            
+            # Generate chain of custody report
+            if anomalies:
+                print("\n🔗 Chain of Custody Report:")
+                for i, anomaly in enumerate(anomalies[:5], 1):  # Show first 5 anomalies
+                    username = anomaly.get('username', 'unknown')
+                    anomaly_type = anomaly.get('anomaly_type', 'unknown')
+                    print(f"   {i}. User: {username} - Type: {anomaly_type}")
+                    print(f"      Evidence recorded in Guardian Ledger with cryptographic proof")
+                
+                if len(anomalies) > 5:
+                    print(f"   ... and {len(anomalies) - 5} more anomalies")
+            
+            print(f"\n🛡️  Guardian's Mandate Summary:")
+            print(f"   Session ID: {self.analysis_session_id}")
+            print(f"   Evidence Integrity: {'CRITICAL' if integrity_result['verified'] else 'COMPROMISED'}")
+            print(f"   Chain of Custody: {'VERIFIED' if integrity_result['verified'] else 'BROKEN'}")
+            print(f"   Forensic Export: {export_path}")
+            print(f"   Compliance Ready: {'YES' if integrity_result['verified'] else 'NO'}")
 
 
 def main():
@@ -982,9 +1233,15 @@ Examples:
     )
     
     parser.add_argument(
+        '--disable-guardian-mandate',
+        action='store_true',
+        help='Disable Guardian\'s Mandate digital evidence integrity features'
+    )
+    
+    parser.add_argument(
         '--version',
         action='version',
-        version='%(prog)s 1.0.0'
+        version='%(prog)s 2.0.0 (with Guardian\'s Mandate)'
     )
     
     args = parser.parse_args()
@@ -998,8 +1255,17 @@ Examples:
         print(f"Error: Output file is required for {args.output_format} format.")
         sys.exit(1)
     
+    # Check Guardian's Mandate availability
+    if not args.disable_guardian_mandate and not GUARDIAN_MANDATE_AVAILABLE:
+        print("Warning: Guardian's Mandate framework not available. Running in legacy mode.")
+        print("Install required dependencies: pip install -r guardians_mandate_requirements.txt")
+    
     # Run analysis
-    detector = IAMAnomalyDetector(baseline_days=args.baseline_days)
+    enable_guardian = not args.disable_guardian_mandate and GUARDIAN_MANDATE_AVAILABLE
+    detector = IAMAnomalyDetector(
+        baseline_days=args.baseline_days,
+        enable_guardian_mandate=enable_guardian
+    )
     detector.run_analysis(args.log_file, args.detection_days, args.output_format, args.output_file)
 
 
